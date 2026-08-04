@@ -100,11 +100,47 @@ if not fixOk then
 	warn("[NPCBrain] Rig fixup failed (non-fatal):", fixErr)
 end
 
--- NOTE: no manual animation tracks here. The rig now has a clean RigType +
--- Animator, so Roblox's own default idle/walk/run animations drive it from
--- the humanoid's movement state. Manually loading extra tracks on top of that
--- made the engine's controller and ours fight (arms swung while standing
--- still), so the engine is the single source of truth for locomotion.
+-- ============ locomotion animations ============
+-- Player characters get an Animate script that plays the default idle/walk/
+-- run animations. NPC rigs don't, so they glide along the floor like a
+-- chess piece. Load the default animation assets directly on the Animator
+-- (server-loaded tracks replicate to every client) and switch on speed.
+local R15_ANIMS = { idle = "507766666", walk = "507777826", run = "507767714" }
+local R6_ANIMS = { idle = "180435571", walk = "180426354", run = "180426354" }
+
+local function loadAnim(id, priority)
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://" .. id
+	local track = humanoid:LoadAnimation(anim)
+	track.Priority = priority
+	return track
+end
+
+local isR15 = rig:FindFirstChild("UpperTorso") ~= nil
+local animSet = isR15 and R15_ANIMS or R6_ANIMS
+local idleTrack = loadAnim(animSet.idle, Enum.AnimationPriority.Idle)
+local walkTrack = loadAnim(animSet.walk, Enum.AnimationPriority.Movement)
+local runTrack = loadAnim(animSet.run, Enum.AnimationPriority.Movement)
+
+task.spawn(function()
+	local moving = nil -- nil = no state yet, true = walking, false = idle
+	while true do
+		task.wait(0.25)
+		local flatSpeed = humanoid.MoveDirection.Magnitude
+		local wantMoving = flatSpeed > 0.5
+		if wantMoving == moving then continue end
+		moving = wantMoving
+		-- R15: the run animation carries normal walking; R6: use walk
+		local moveTrack = isR15 and runTrack or walkTrack
+		if wantMoving then
+			if idleTrack then idleTrack:Stop(0.3) end
+			if moveTrack then moveTrack:Play(0.3) end
+		else
+			if moveTrack then moveTrack:Stop(0.3) end
+			if idleTrack then idleTrack:Play(0.3) end
+		end
+	end
+end)
 
 -- ============ identity + personality ============
 local NPC = {
@@ -385,19 +421,22 @@ local function respond(plr, intent, msg)
 	memory.interactions = memory.interactions + 1
 	memory.mood = math.clamp(memory.mood + 0.02, 0, 1)
 
+	local s = msg:lower()
+
+	-- knowledge first: if the player's words touch anything we know about,
+	-- answer it directly no matter how the sentence is framed - this is what
+	-- makes the NPC sound like it actually listens to what was said
 	local text
-	if intent == "question" then
-		local s = msg:lower()
-		text = nil
-		for topic, list in pairs(KB) do
-			if s:find(topic, 1, true) then
-				text = pick(list)
-				break
-			end
+	for topic, list in pairs(KB) do
+		if s:find(topic, 1, true) then
+			text = pick(list)
+			break
 		end
-		text = text or pick(REPLIES.question)
-	else
-		text = pick(REPLIES[intent] or REPLIES.statement)
+	end
+
+	if not text then
+		-- nothing in the knowledge base: fall back to intent replies
+		text = pick(REPLIES[intent] or REPLIES.question)
 	end
 
 	text = text:gsub("%%s", plr.DisplayName or plr.Name)
@@ -454,7 +493,9 @@ Chat.OnServerEvent:Connect(function(plr, msg)
 
 	task.spawn(function()
 		sendNpc("...") -- thinking
-		local thinkTime = 1.2 + math.random() * 1.6
+		-- longer messages take longer to parse: it reads like the unit is
+		-- actually processing what was said instead of playing a canned reply
+		local thinkTime = 1.0 + math.min(#msg * 0.03, 1.5) + math.random() * 1.2
 		task.wait(thinkTime)
 		if memory.talker ~= plr then
 			print("[NPCBrain] Thinking cancelled - talker changed")
