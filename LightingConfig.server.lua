@@ -121,10 +121,9 @@ local function apply()
 		emitter.Parent = spawn
 	end
 
-	-- visible fog banks: Lighting fog can read as "nothing at all" on some
-	-- setups, so we also scatter drifting smoke banks that literally roll
-	-- in and out with the schedule. Anchored invisible part as the anchor
-	-- so the emitters have a guaranteed parent.
+	-- visible fog banks: a wide ring of emitters around the play area, all
+	-- drifting toward the centre. As the schedule ramps up, fog literally
+	-- rolls in from every direction instead of popping up as a few balls.
 	local fogAnchor = Workspace:FindFirstChild("FogAnchor")
 	if not fogAnchor then
 		fogAnchor = Instance.new("Part")
@@ -138,41 +137,47 @@ local function apply()
 		fogAnchor.Parent = Workspace
 	end
 
-	local BANK_OFFSETS = {
-		Vector3.new(0, 14, 0),
-		Vector3.new(70, 16, -45),
-		Vector3.new(-80, 14, 30),
-		Vector3.new(40, 10, -90),
-		Vector3.new(-45, 18, 70),
-		Vector3.new(0, 22, 120),
-	}
-	for _, off in ipairs(BANK_OFFSETS) do
-		local e = Instance.new("ParticleEmitter")
-		e.Name = "FogBank"
-		e.Texture = "rbxasset://textures/particles/smoke_main.dds"
-		e.LightEmission = 0.12
-		e.LightInfluence = 0
-		e.Speed = NumberRange.new(0.4, 1.3)
-		e.Lifetime = NumberRange.new(18, 26)
-		e.Rate = 0.05
-		e.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 18),
-			NumberSequenceKeypoint.new(1, 36),
-		})
-		e.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.3),
-			NumberSequenceKeypoint.new(0.6, 0.5),
-			NumberSequenceKeypoint.new(1, 0.72),
-		})
-		e.Color = ColorSequence.new(FOG)
-		e.Rotation = NumberRange.new(0, 360)
-		e.RotSpeed = NumberRange.new(-3, 3)
-		e.SpreadAngle = Vector2.new(45, 45)
-		local attach = Instance.new("Attachment")
-		attach.Position = off
-		attach.Parent = fogAnchor
-		e.Parent = attach
-		fogBanks[#fogBanks + 1] = e
+	local center = fogAnchor.CFrame.Position
+	local directions = 8
+	local bands = { 70, 130, 190 } -- three rings: near, mid, far
+	for bandIdx, radius in ipairs(bands) do
+		for d = 0, directions - 1 do
+			local ang = (d / directions) * math.pi * 2
+			local off = Vector3.new(
+				math.cos(ang) * radius,
+				8 + (bandIdx - 1) * 7 + math.random() * 5,
+				math.sin(ang) * radius
+			)
+			local e = Instance.new("ParticleEmitter")
+			e.Name = "FogBank"
+			e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+			e.LightEmission = 0.12
+			e.LightInfluence = 0
+			-- far bands drift faster so the fog arrives from the distance
+			e.Speed = NumberRange.new(1 + (bandIdx - 1), 2 + (bandIdx - 1) * 1.5)
+			e.Lifetime = NumberRange.new(14, 22)
+			e.Rate = 0.05
+			e.Size = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 7),
+				NumberSequenceKeypoint.new(1, 20),
+			})
+			e.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.35),
+				NumberSequenceKeypoint.new(0.5, 0.55),
+				NumberSequenceKeypoint.new(1, 0.8),
+			})
+			e.Color = ColorSequence.new(FOG)
+			e.Rotation = NumberRange.new(0, 360)
+			e.RotSpeed = NumberRange.new(-4, 4)
+			e.SpreadAngle = Vector2.new(60, 60)
+			local attach = Instance.new("Attachment")
+			attach.Position = off
+			attach.Parent = fogAnchor
+			-- face the centre so the particles drift toward the player area
+			attach.CFrame = CFrame.lookAt(center + off, center)
+			e.Parent = attach
+			fogBanks[#fogBanks + 1] = e
+		end
 	end
 end
 
@@ -206,7 +211,7 @@ end
 
 -- drive the visible particle fog banks: 0 = clear, 1 = heavy fog
 local function setFogIntensity(t)
-	local rate = lerp(0.05, 14, t)
+	local rate = lerp(0.05, 6, t)
 	for _, e in ipairs(fogBanks) do
 		e.Rate = rate
 	end
