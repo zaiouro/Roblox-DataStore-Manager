@@ -84,19 +84,11 @@ local CAMERA = {
 	MaxZoomDistance = 24,
 }
 local function applyCameraLimits()
-	local cam = Workspace.CurrentCamera
-	if not cam then return end
-	cam.MinZoomDistance = CAMERA.MinZoomDistance
-	cam.MaxZoomDistance = CAMERA.MaxZoomDistance
+	player.CameraMinZoomDistance = CAMERA.MinZoomDistance
+	player.CameraMaxZoomDistance = CAMERA.MaxZoomDistance
 end
-Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(applyCameraLimits)
-if Workspace.CurrentCamera then
-	applyCameraLimits()
-else
-	Workspace.ChildAdded:Connect(function(ch)
-		if ch:IsA("Camera") then applyCameraLimits() end
-	end)
-end
+applyCameraLimits()
+player.CharacterAdded:Connect(applyCameraLimits)
 
 local function mk(className, props, parent)
 	local inst = Instance.new(className)
