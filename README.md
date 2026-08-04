@@ -1,32 +1,32 @@
-# About me - Roblox Scripter
+# zaiouro — Roblox Scripter
 
-Hi! I'm **zaiouro**, a Roblox scripter applying for the **Beginner Scripter** role 📜
+Hi! I'm **zaiouro**, a Roblox scripter. I build original, full-stack scripts for Roblox games — everything from autonomous NPCs and chat systems to player data and UI. All code is written by me from scratch (no free models, no stolen assets).
 
-All of my code is original and written by me from scratch — no free models, no AI-generated code, no stolen assets.
-
----
-
-## What I'm working on
-
-**Hadasphere** — a horror-suspense Roblox game. I wrote the full script layer for it:
-
-- An **autonomous NPC** (named K-07) that walks around, greets players, understands what you type, and answers questions about the game world. You can tell it to follow you or to stop.
-- A **custom bubble chat system** — messages appear above players' heads, with typing indicators and special styling for staff and NPC messages.
-- A **player system** with health, sanity, stamina (energy drains when you run, recovers when you rest), and saved data between sessions.
-- A **staff system** with chat commands (`!kick`, `!tp`, `!heal`, `!announce`...) and permission levels.
-- A **full UI suite** — loading screen, HUD bars, settings menu, staff panel.
+**Open to scripting commissions / hiring.**
 
 ---
 
-## My scripts (10 scripts, ~3,500 lines total)
+## Skills
+
+- **Luau scripting** — server & client, modular ModuleScript services
+- **Systems I've built**: NPC AI, bubble chat, player data & persistence, stamina/energy systems, staff commands & permissions, full UI (HUD, settings, menus)
+- **Remote events** — clean server↔client communication (chat, typing, sprint, staff actions)
+- **Performance-minded** — throttled loops, no memory leaks, no per-frame polling
+- **Rojo workflow** — develop in VS Code, sync to Roblox Studio
+
+---
+
+## Featured project: Hadasphere
+
+A horror-suspense Roblox game. I wrote the complete script layer (~3,500 lines across 10 scripts):
 
 | Script | What it does |
 |---|---|
-| `NPCBrain.server.lua` | NPC brain: state machine, understands speech, memory, personality, follows you |
-| `UIManager.client.lua` | All the UI: HUD, settings, loading screen, staff panel |
-| `StaffManager.server.lua` | Chat commands, staff permissions, chat relay |
+| `NPCBrain.server.lua` | Autonomous NPC (K-07): walks around, greets players, understands typed messages, answers questions about the world, follows you on command |
+| `UIManager.client.lua` | Full UI: loading screen, HUD (health/sanity/stamina bars), settings menu, staff panel |
+| `StaffManager.server.lua` | Chat commands (`!kick`, `!tp`, `!heal`, `!announce`...), staff permissions, chat relay |
 | `PlayerDataService.lua` | Saved player data, health/sanity/stamina, energy drain & regen |
-| `EmailChat.client.lua` | Bubble chat above heads, typing indicator, chat input bar |
+| `EmailChat.client.lua` | Bubble chat above heads, typing indicators, custom chat input bar |
 | `TeamService.lua` | Teams, spawn points, shared remote events |
 | `LightingConfig.server.lua` | Fog / lighting atmosphere |
 | `PlayerConfig.lua` | Shared config: stats, stamina tuning, staff levels |
@@ -35,21 +35,42 @@ All of my code is original and written by me from scratch — no free models, no
 
 ---
 
-## How my code is structured
+## Proof it works (verifiable in Studio)
 
-- Each system is its own **module** (services) — teams, player data, staff, NPC each in their own file
-- I use **functions, events, and loops** properly:
-  - RemoteEvents for all chat/staff/player communication
-  - NPC brain runs on a state machine loop (idle → wander → talk → follow)
-  - Data saves run on timers, not every frame
-- **No memory leaks**: events connect once, UI cleans up after itself, player data is cleaned when players leave
+No video — here's how to verify the systems yourself. The scripts print **live debug logs** to the Studio Output window:
+
+### 1. NPC chat works
+Type near the NPC (within 45 studs) or say "K-07". The Output window shows:
+```
+[NPCBrain] Heard from YourName (dist=12): hello k-07
+[NPCBrain] Intent: greeting
+[NPCBrain] Sending: Hello, YourName. You may speak freely.
+[NPCBrain] -> YourName (dist=12, isTalker=true)
+```
+Then the reply appears as a bubble above the NPC's head.
+
+### 2. NPC wakes up at game start
+On Play, Output shows:
+```
+[NPCBrain] Found rig: Rig in Workspace
+[NPCBrain] K-07 is awake and thinking.
+```
+
+### 3. Systems load cleanly
+On Play, Output shows:
+```
+[TeamManager] Teams + player data ready.
+[StaffManager] Staff system ready.
+[EmailChat] ready
+```
+
+**How to run:** place the scripts in Roblox Studio (server scripts in ServerScriptService, shared modules in ReplicatedStorage → Shared, client scripts in StarterPlayer → StarterPlayerScripts), add a rig model named `Rig` in Workspace, press Play, and check the Output window.
 
 ---
 
-## 📹 Demonstration video
+## Contact
 
-*(paste your demo video link here — showing the NPC talking, following you, and the chat bubbles)*
-
----
+- **Discord:** *(your username)*
+- **Roblox:** *(your profile link)*
 
 *Thanks for reading! — zaiouro*
