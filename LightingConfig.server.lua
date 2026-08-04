@@ -9,10 +9,8 @@
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 
--- filled by apply() and driven by the fog schedule below
-local fogBanks = {}
-
--- desaturated, cold, mythic green-grey evening palette
+-- fog sheets populated by apply(), driven by the fog event below
+local fogSheets = {}
 local AMBIENT = Color3.fromRGB(88, 96, 90)
 local SHIFT_TOP = Color3.fromRGB(150, 150, 138)
 local SHIFT_BOTTOM = Color3.fromRGB(40, 44, 42)
@@ -121,9 +119,10 @@ local function apply()
 		emitter.Parent = spawn
 	end
 
-	-- visible fog banks: a wide ring of emitters around the play area, all
-	-- drifting toward the centre. As the schedule ramps up, fog literally
-	-- rolls in from every direction instead of popping up as a few balls.
+	-- fog sheets: large flat transparent parts at the map edge that
+	-- drift inward during a fog event. Unlike particle emitters (which
+	-- always look like discrete puffs), sheets create a continuous wall
+	-- of fog that rolls in from outside the world.
 	local fogAnchor = Workspace:FindFirstChild("FogAnchor")
 	if not fogAnchor then
 		fogAnchor = Instance.new("Part")
@@ -138,48 +137,31 @@ local function apply()
 	end
 
 	local center = fogAnchor.CFrame.Position
-	-- one wide ring far outside the play area: particles are born at the
-	-- horizon and drift inward, so fog slowly approaches from beyond the
-	-- world instead of popping up inside it
-	local directions = 20
-	local ringRadius = 320
-	for d = 0, directions - 1 do
-		local ang = (d / directions) * math.pi * 2
-		local radius = ringRadius + math.random(-50, 50)
+	local sheetCount = 8
+	local sheetRadius = 350
+	local sheetSize = Vector3.new(400, 1, 400)
+	for d = 0, sheetCount - 1 do
+		local ang = (d / sheetCount) * math.pi * 2
 		local off = Vector3.new(
-			math.cos(ang) * radius,
-			10 + math.random() * 14,
-			math.sin(ang) * radius
+			math.cos(ang) * sheetRadius,
+			20,
+			math.sin(ang) * sheetRadius
 		)
-		local e = Instance.new("ParticleEmitter")
-		e.Name = "FogBank"
-		e.Texture = "rbxasset://textures/particles/smoke_main.dds"
-		e.LightEmission = 0.12
-		e.LightInfluence = 0
-		-- slow drift inward; long lifetime so particles cross the whole ring
-		e.Speed = NumberRange.new(2.5, 4.5)
-		e.Lifetime = NumberRange.new(50, 70)
-		e.Rate = 0.05
-		e.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 4),
-			NumberSequenceKeypoint.new(1, 12),
-		})
-		e.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.5),
-			NumberSequenceKeypoint.new(0.5, 0.65),
-			NumberSequenceKeypoint.new(1, 0.88),
-		})
-		e.Color = ColorSequence.new(FOG)
-		e.Rotation = NumberRange.new(0, 360)
-		e.RotSpeed = NumberRange.new(-3, 3)
-		e.SpreadAngle = Vector2.new(50, 50)
-		local attach = Instance.new("Attachment")
-		attach.Position = off
-		attach.Parent = fogAnchor
-		-- face the centre so the fog travels inward (classic 2-arg CFrame)
-		attach.CFrame = CFrame.new(center + off, center)
-		e.Parent = attach
-		fogBanks[#fogBanks + 1] = e
+		local sheet = Instance.new("Part")
+		sheet.Name = "FogSheet"
+		sheet.Anchored = true
+		sheet.CanCollide = false
+		sheet.Size = sheetSize
+		sheet.Material = Enum.Material.SmoothPlastic
+		sheet.Color = FOG
+		sheet.Transparency = 0.92
+		sheet.CFrame = CFrame.new(center + off, center)
+		sheet.Parent = fogAnchor
+		fogSheets[#fogSheets + 1] = {
+			part = sheet,
+			home = center + off,
+			target = center + off * 0.22, -- drift to ~80 studs from center
+		}
 	end
 end
 
@@ -189,16 +171,16 @@ print("[LightingConfig] dark atmosphere applied")
 -- ============ fog event ============
 -- The NPC lore: "the lights flicker on a nine-second cycle. When the ninth
 -- second does not come, that is when the fog moves." So the fog is not a
--- background loop - it is an event: the lights stutter, then the fog rolls
--- in from beyond the world, squats over the map, and eventually pulls back.
-local CLEAR_END = 550       -- best visibility (matches the apply() baseline)
+-- background loop - it is an event: the lights stutter, then the fog sheets
+-- roll in from beyond the world, squat over the map, and eventually pull back.
+local CLEAR_END = 550
 local CLEAR_START = 90
-local FOGGED_END = 55       -- thickest fog - dense, but never blindness
+local FOGGED_END = 55
 local FOGGED_START = 6
-local EVENT_MIN = 80        -- seconds of clear between events
+local EVENT_MIN = 80
 local EVENT_MAX = 150
-local ROLL_IN = 25          -- fog takes its time arriving
-local HOLD_TIME = 45        -- how long the fog squats on the map
+local ROLL_IN = 25
+local HOLD_TIME = 45
 local LIFT_TIME = 22
 
 local function lerp(a, b, t)
@@ -214,28 +196,25 @@ local function setFog(fogStart, fogEnd)
 	end)
 end
 
--- drive the visible particle fog banks: 0 = clear, 1 = heavy fog
-local function setFogIntensity(t)
-	local rate = lerp(0.05, 3.5, t)
-	for _, e in ipairs(fogBanks) do
-		e.Rate = rate
+local function setAtmoDensity(d)
+	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+	if atmo then
+		pcall(function()
+			atmo.Density = d
+		end)
 	end
 end
 
--- step a fog transition smoothly over `duration` seconds
-local function runPhase(duration, fromStart, fromEnd, toStart, toEnd, fromDensity, toDensity)
-	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
-	local steps = math.max(1, math.floor(duration / 0.25))
-	for i = 1, steps do
-		local t = i / steps
-		setFog(lerp(fromStart, toStart, t), lerp(fromEnd, toEnd, t))
-		setFogIntensity(t)
-		if atmo then
-			pcall(function()
-				atmo.Density = lerp(fromDensity, toDensity, t)
-			end)
+local function tweenSheets(targetDist, duration)
+	for _, s in ipairs(fogSheets) do
+		local startPos = s.part.CFrame.Position
+		local endPos = s.home + (s.target - s.home) * targetDist
+		local steps = math.max(1, math.floor(duration / 0.25))
+		for i = 1, steps do
+			local t = i / steps
+			s.part.CFrame = CFrame.new(lerp(startPos, endPos, t), s.part.CFrame.Position)
+			task.wait(0.25)
 		end
-		task.wait(0.25)
 	end
 end
 
@@ -250,11 +229,9 @@ local function broadcast(title, text)
 end
 
 task.spawn(function()
-	-- let the base atmosphere apply before any event can start
 	task.wait(8)
 	local first = true
 	while true do
-		-- first event fires early so the fog can be tested quickly
 		local clearTime = first and 15 or EVENT_MIN + math.random(0, EVENT_MAX - EVENT_MIN)
 		first = false
 		print("[LightingConfig] next fog event in " .. clearTime .. "s")
@@ -274,17 +251,26 @@ task.spawn(function()
 		end
 		broadcast("The lights flicker", "The ninth second never came. The fog is moving.")
 
-		-- 2) fog rolls in from beyond the world
+		-- 2) fog sheets roll in from the edges
 		print("[LightingConfig] fog rolling in")
-		runPhase(ROLL_IN, CLEAR_START, CLEAR_END, FOGGED_START, FOGGED_END, 0.18, 0.55)
+		setFog(CLEAR_START, CLEAR_END)
+		setAtmoDensity(0.18)
+		tweenSheets(1, ROLL_IN)
+		setFog(FOGGED_START, FOGGED_END)
+		setAtmoDensity(0.55)
 
 		-- 3) the fog squats over the map
 		print("[LightingConfig] fog thick - holding")
-		runPhase(HOLD_TIME, FOGGED_START, FOGGED_END, FOGGED_START, FOGGED_END, 0.55, 0.55)
+		broadcast("Fog bank", "It rolled in from beyond the perimeter. Stay under the lights.")
+		task.wait(HOLD_TIME)
 
 		-- 4) the fog pulls back
 		print("[LightingConfig] fog lifting")
-		runPhase(LIFT_TIME, FOGGED_START, FOGGED_END, CLEAR_START, CLEAR_END, 0.55, 0.18)
+		setFog(FOGGED_START, FOGGED_END)
+		setAtmoDensity(0.55)
+		tweenSheets(0, LIFT_TIME)
+		setFog(CLEAR_START, CLEAR_END)
+		setAtmoDensity(0.18)
 		broadcast("The fog lifts", "Visibility is returning. The perimeter is clear.")
 	end
 end)
