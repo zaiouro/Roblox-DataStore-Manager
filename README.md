@@ -1,4 +1,4 @@
-# Hadasphere — Roblox Scripter Application
+# Roblox Scripter Application
 
 > **Role applied for:** Scripter (Advanced) 📜
 > **Author:** zaiouro
