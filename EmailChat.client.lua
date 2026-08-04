@@ -139,7 +139,6 @@ local function pushBubble(uid, fromName, text, isStaff, npcModel)
 	bubble.Font = Enum.Font.Code
 	bubble.TextSize = 14
 	bubble.TextWrapped = true
-	bubble.MaxVisibleLines = 4
 	bubble.TextColor3 = COLORS.text
 	bubble.RichText = true
 	bubble.Text = "<font color='#" .. nameColor:ToHex() .. "'><b>" .. escapeRichText(nameTag .. fromName) .. ":</b></font> " .. escapeRichText(text)
