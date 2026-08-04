@@ -8,6 +8,7 @@
 ]]
 
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -74,6 +75,28 @@ local function setCoreGui(enabled, names)
 	end
 end
 setCoreGui(false)
+
+-- ============ third-person camera limits ============
+-- Players can only zoom in/out so far, so third person stays tight and
+-- atmospheric instead of letting people view the whole map from orbit.
+local CAMERA = {
+	MinZoomDistance = 5,
+	MaxZoomDistance = 24,
+}
+local function applyCameraLimits()
+	local cam = Workspace.CurrentCamera
+	if not cam then return end
+	cam.MinZoomDistance = CAMERA.MinZoomDistance
+	cam.MaxZoomDistance = CAMERA.MaxZoomDistance
+end
+Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(applyCameraLimits)
+if Workspace.CurrentCamera then
+	applyCameraLimits()
+else
+	Workspace.ChildAdded:Connect(function(ch)
+		if ch:IsA("Camera") then applyCameraLimits() end
+	end)
+end
 
 local function mk(className, props, parent)
 	local inst = Instance.new(className)
