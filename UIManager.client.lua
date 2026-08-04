@@ -521,6 +521,76 @@ notifyEvent.OnClientEvent:Connect(function(title, text)
 	toast(title, text, COLORS.accent)
 end)
 
+-- ============ opening announcement ============
+-- Shown once at the top of the screen after load, then fades out.
+-- Teaches the controls that aren't obvious: M = menu (contains controls),
+-- T or / = chat, E = interact.
+local function openingAnnouncement()
+	local lines = {
+		"Press M for the menu — controls are listed there",
+		"Press T or / to chat",
+		"Press E to interact",
+	}
+	local card = mk("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 12),
+		Size = UDim2.new(0, 420, 0, 86),
+		BackgroundColor3 = COLORS.panel,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	})
+	mk("UICorner", { CornerRadius = UDim.new(0, 10) }, card)
+	mk("UIStroke", { Color = COLORS.accent, Thickness = 1, Transparency = 0.3 }, card)
+
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 10)
+	pad.PaddingBottom = UDim.new(0, 10)
+	pad.PaddingLeft = UDim.new(0, 14)
+	pad.PaddingRight = UDim.new(0, 14)
+	pad.Parent = card
+
+	mk("UIListLayout", {
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 4),
+	}, card)
+
+	local group = Instance.new("CanvasGroup")
+	group.Size = UDim2.fromScale(1, 1)
+	group.BackgroundTransparency = 1
+	group.GroupTransparency = 1
+	group.Parent = card
+
+	for i, line in ipairs(lines) do
+		mk("TextLabel", {
+			Text = line,
+			Font = FONT,
+			TextSize = 13,
+			TextColor3 = i == 1 and COLORS.text or COLORS.dim,
+			BackgroundTransparency = 1,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Size = UDim2.new(1, 0, 0, 18),
+			LayoutOrder = i,
+		}, group)
+	end
+
+	local fadeIn = TweenService:Create(group, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		GroupTransparency = 0,
+	})
+	fadeIn:Play()
+
+	task.delay(6, function()
+		local fadeOut = TweenService:Create(group, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			GroupTransparency = 1,
+		})
+		fadeOut:Play()
+		fadeOut.Completed:Wait()
+		card:Destroy()
+	end)
+end
+
+-- wait a couple of seconds so the loading screen clears before showing it
+task.delay(3, openingAnnouncement)
+
 -- ============ staff panel ============
 local function playerStaffLevel()
 	return player:GetAttribute("StaffLevel") or 0

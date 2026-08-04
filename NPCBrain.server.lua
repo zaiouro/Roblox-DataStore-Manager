@@ -515,7 +515,8 @@ task.spawn(function()
 		lastPos = hrp.Position
 		if moved > 0.5 then lastMovedAt = now end
 
-		-- go quiet when nobody is around to see it (no pathing at all)
+		-- patrol slower when nobody is close, but never freeze completely
+		-- (a frozen NPC reads as "broken" even though it's just a design choice)
 		local anyoneNear = false
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if distToNPC(plr) < 150 then
@@ -524,8 +525,14 @@ task.spawn(function()
 			end
 		end
 		if not anyoneNear then
-			clearGoal()
-			state = "IDLE"
+			-- nobody watching: wander slowly so the NPC still looks alive
+			local idleInterval = 10
+			if now - lastWander > idleInterval then
+				setGoal(pickWanderPoint(), 8)
+				state = "WANDER"
+				lastMovedAt = now
+				lastWander = now
+			end
 		elseif memory.following then
 			-- 1) following a player overrides everything
 			local root = charRoot(memory.following)
@@ -567,7 +574,9 @@ task.spawn(function()
 
 		-- 4) otherwise wander, lazily, only when someone could see it
 		else
-			local stuck = state == "WANDER" and now - lastMovedAt > 4
+			-- if we have been standing still for 4+ seconds while trying to
+			-- walk somewhere, the goal is unreachable - pick a new one soon
+			local stuck = currentGoal ~= nil and now - lastMovedAt > 4
 			local interval = state == "IDLE" and 4 or (stuck and 1 or 8)
 			if now - lastWander > interval then
 				setGoal(pickWanderPoint(), 10 + math.random() * 4)

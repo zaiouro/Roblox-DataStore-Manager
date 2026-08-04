@@ -175,21 +175,6 @@ mk("UIPadding", {
 	PaddingRight = UDim.new(0, 14),
 }, bar)
 
--- chat open button (bottom-left corner) so chat is discoverable
-local chatButton = mk("TextButton", {
-	AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -16),
-	Size = UDim2.new(0, 110, 0, 36),
-	BackgroundColor3 = COLORS.panel,
-	BorderSizePixel = 0,
-	Text = "Chat  [T]",
-	Font = Enum.Font.Code,
-	TextSize = 13,
-	TextColor3 = COLORS.text,
-})
-mk("UICorner", { CornerRadius = UDim.new(0, 10) }, chatButton)
-mk("UIStroke", { Color = COLORS.accent, Thickness = 1, Transparency = 0.5 }, chatButton)
-
 local input = mk("TextBox", {
 	Size = UDim2.new(1, 0, 1, 0),
 	BackgroundTransparency = 1,
@@ -220,10 +205,6 @@ local function sendMessage()
 	if #text == 0 then return end
 	chatRemote:FireServer(text)
 end
-
-chatButton.MouseButton1Click:Connect(function()
-	setComposing(true)
-end)
 
 -- live typing indicator above a player's head (visible to everyone)
 local typingGuis = {}
