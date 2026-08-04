@@ -175,6 +175,21 @@ mk("UIPadding", {
 	PaddingRight = UDim.new(0, 14),
 }, bar)
 
+-- chat open button (bottom-left corner) so chat is discoverable
+local chatButton = mk("TextButton", {
+	AnchorPoint = Vector2.new(0, 1),
+	Position = UDim2.new(0, 16, 1, -16),
+	Size = UDim2.new(0, 110, 0, 36),
+	BackgroundColor3 = COLORS.panel,
+	BorderSizePixel = 0,
+	Text = "Chat  [T]",
+	Font = Enum.Font.Code,
+	TextSize = 13,
+	TextColor3 = COLORS.text,
+})
+mk("UICorner", { CornerRadius = UDim.new(0, 10) }, chatButton)
+mk("UIStroke", { Color = COLORS.accent, Thickness = 1, Transparency = 0.5 }, chatButton)
+
 local input = mk("TextBox", {
 	Size = UDim2.new(1, 0, 1, 0),
 	BackgroundTransparency = 1,
@@ -205,6 +220,10 @@ local function sendMessage()
 	if #text == 0 then return end
 	chatRemote:FireServer(text)
 end
+
+chatButton.MouseButton1Click:Connect(function()
+	setComposing(true)
+end)
 
 -- live typing indicator above a player's head (visible to everyone)
 local typingGuis = {}
@@ -275,6 +294,49 @@ UserInputService.InputBegan:Connect(function(inp, processed)
 	end
 end)
 
+-- screen chat log (bottom-left, above the chat button) so you can always
+-- see messages - including your own - regardless of camera angle
+local logFrame = mk("Frame", {
+	AnchorPoint = Vector2.new(0, 1),
+	Position = UDim2.new(0, 16, 1, -64),
+	Size = UDim2.new(0, 380, 0, 160),
+	BackgroundTransparency = 1,
+	ZIndex = 2,
+})
+local logLayout = mk("UIListLayout", {
+	SortOrder = Enum.SortOrder.LayoutOrder,
+	VerticalAlignment = Enum.VerticalAlignment.Bottom,
+	Padding = UDim.new(0, 4),
+}, logFrame)
+logLayout:GetPropertyChangedSignal("AbsolutePosition"):Connect(function() end)
+
+local MAX_LOG = 6
+local logLines = 0
+
+local function pushLog(fromName, text, isStaff, isNpc)
+	logLines = logLines + 1
+	local line = mk("TextLabel", {
+		Size = UDim2.new(0, 380, 0, 18),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Code,
+		TextSize = 13,
+		TextWrapped = false,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		RichText = true,
+		Text = "<font color='#" .. (isStaff and COLORS.staff:ToHex() or (isNpc and Color3.fromRGB(120, 210, 200):ToHex() or COLORS.accent:ToHex())) .. "'><b>" .. escapeRichText(fromName) .. ":</b></font> " .. escapeRichText(text),
+		TextColor3 = COLORS.text,
+		LayoutOrder = logLines,
+	}, logFrame)
+	-- keep the newest messages; drop the oldest when over MAX_LOG
+	local children = logFrame:GetChildren()
+	for _, ch in ipairs(children) do
+		if ch:IsA("TextLabel") and ch ~= line and ch.LayoutOrder < logLines - MAX_LOG then
+			ch:Destroy()
+		end
+	end
+end
+
 chatRemote.OnClientEvent:Connect(function(data)
 	if type(data) ~= "table" then return end
 	local from = tostring(data.from or "?")
@@ -285,6 +347,9 @@ chatRemote.OnClientEvent:Connect(function(data)
 	if #text == 0 then return end
 	setTyping(uid, false)
 	pushBubble(uid, from, text, isStaff, npcModel)
+	if text ~= "..." then
+		pushLog(from, text, isStaff, npcModel ~= nil)
+	end
 end)
 
 -- typing indicator relay
