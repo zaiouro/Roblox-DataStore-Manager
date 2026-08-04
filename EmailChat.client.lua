@@ -29,9 +29,6 @@ local bubblesEnabled = player:GetAttribute("ChatBubbles") ~= false
 -- children) in modern Roblox, so guard every access with pcall.
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
 pcall(function()
-	TextChatService:SetChatInputBarEnabled(false)
-end)
-pcall(function()
 	TextChatService.ChatInputBarConfiguration.Enabled = false
 end)
 pcall(function()
