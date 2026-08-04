@@ -70,7 +70,7 @@ On Play, Output shows:
 
 ## Contact
 
-- **Discord:** *(your username)*
-- **Roblox:** *(your profile link)*
+- **Discord:** zaiouro
+- **Roblox:** https://www.roblox.com/users/3255975644/profile
 
 *Thanks for reading! — zaiouro*
