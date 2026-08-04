@@ -7,6 +7,10 @@
 ]]
 
 local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+-- filled by apply() and driven by the fog schedule below
+local fogBanks = {}
 
 -- desaturated, cold, mythic green-grey evening palette
 local AMBIENT = Color3.fromRGB(88, 96, 90)
@@ -116,6 +120,61 @@ local function apply()
 		emitter.SpreadAngle = Vector2.new(180, 180)
 		emitter.Parent = spawn
 	end
+
+	-- visible fog banks: Lighting fog can read as "nothing at all" on some
+	-- setups, so we also scatter drifting smoke banks that literally roll
+	-- in and out with the schedule. Anchored invisible part as the anchor
+	-- so the emitters have a guaranteed parent.
+	local fogAnchor = Workspace:FindFirstChild("FogAnchor")
+	if not fogAnchor then
+		fogAnchor = Instance.new("Part")
+		fogAnchor.Name = "FogAnchor"
+		fogAnchor.Anchored = true
+		fogAnchor.CanCollide = false
+		fogAnchor.Transparency = 1
+		fogAnchor.Size = Vector3.new(1, 1, 1)
+		local at = spawn and spawn.Position or Vector3.new(0, 10, 0)
+		fogAnchor.CFrame = CFrame.new(at)
+		fogAnchor.Parent = Workspace
+	end
+
+	local BANK_OFFSETS = {
+		Vector3.new(0, 14, 0),
+		Vector3.new(70, 16, -45),
+		Vector3.new(-80, 14, 30),
+		Vector3.new(40, 10, -90),
+		Vector3.new(-45, 18, 70),
+		Vector3.new(0, 22, 120),
+	}
+	local fogBanks = {}
+	for _, off in ipairs(BANK_OFFSETS) do
+		local e = Instance.new("ParticleEmitter")
+		e.Name = "FogBank"
+		e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		e.LightEmission = 0.12
+		e.LightInfluence = 0
+		e.Speed = NumberRange.new(0.4, 1.3)
+		e.Lifetime = NumberRange.new(18, 26)
+		e.Rate = 0.05
+		e.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 18),
+			NumberSequenceKeypoint.new(1, 36),
+		})
+		e.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.3),
+			NumberSequenceKeypoint.new(0.6, 0.5),
+			NumberSequenceKeypoint.new(1, 0.72),
+		})
+		e.Color = ColorSequence.new(FOG)
+		e.Rotation = NumberRange.new(0, 360)
+		e.RotSpeed = NumberRange.new(-3, 3)
+		e.SpreadAngle = Vector2.new(45, 45)
+		local attach = Instance.new("Attachment")
+		attach.Position = off
+		attach.Parent = fogAnchor
+		e.Parent = attach
+		fogBanks[#fogBanks + 1] = e
+	end
 end
 
 apply()
@@ -146,6 +205,14 @@ local function setFog(fogStart, fogEnd)
 	end)
 end
 
+-- drive the visible particle fog banks: 0 = clear, 1 = heavy fog
+local function setFogIntensity(t)
+	local rate = lerp(0.05, 14, t)
+	for _, e in ipairs(fogBanks) do
+		e.Rate = rate
+	end
+end
+
 -- step a fog transition smoothly over `duration` seconds
 local function runPhase(duration, fromStart, fromEnd, toStart, toEnd, fromDensity, toDensity)
 	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
@@ -153,6 +220,7 @@ local function runPhase(duration, fromStart, fromEnd, toStart, toEnd, fromDensit
 	for i = 1, steps do
 		local t = i / steps
 		setFog(lerp(fromStart, toStart, t), lerp(fromEnd, toEnd, t))
+		setFogIntensity(t)
 		if atmo then
 			pcall(function()
 				atmo.Density = lerp(fromDensity, toDensity, t)
