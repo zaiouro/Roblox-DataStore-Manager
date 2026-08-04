@@ -146,7 +146,6 @@ local function apply()
 		Vector3.new(-45, 18, 70),
 		Vector3.new(0, 22, 120),
 	}
-	local fogBanks = {}
 	for _, off in ipairs(BANK_OFFSETS) do
 		local e = Instance.new("ParticleEmitter")
 		e.Name = "FogBank"
