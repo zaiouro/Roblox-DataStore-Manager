@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0714">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Home</title>
+  <meta name="description" content="Hadasphere ??an unreleased Roblox analog horror myth game. Beyond the sky, below the abyss.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="transition.css">
+<style>
+.hero{min-height:92vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:110px 24px 60px;position:relative}
+.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--purple);color:var(--violet);padding:6px 16px;border-radius:999px;font-size:12px;letter-spacing:2px;margin-bottom:28px}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+h1{font-size:clamp(44px,9vw,92px);font-weight:900;letter-spacing:4px;line-height:1;color:#fff;margin-bottom:14px}
+.tagline{font-size:clamp(15px,2.5vw,20px);color:var(--dim);letter-spacing:2px;margin-bottom:12px;font-weight:300}
+.hero-note{font-size:13px;color:var(--violet);opacity:.85;letter-spacing:1px;margin-bottom:40px;font-style:italic}
+.cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;padding:14px 34px;border-radius:8px;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .25s;cursor:pointer;border:none;font-family:inherit}
+.btn.discord{background:var(--purple);color:#fff;box-shadow:0 0 24px rgba(124,92,255,.35)}
+.btn.discord:hover{background:#8d6cff;box-shadow:0 0 40px rgba(124,92,255,.55);transform:translateY(-2px)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn.ghost:hover{border-color:var(--purple);color:var(--violet)}
+.stats{display:flex;justify-content:center;gap:34px;margin-top:60px;flex-wrap:wrap}
+.stats div{text-align:center}
+.stats .num{font-size:30px;font-weight:800;color:#fff}
+.stats .lbl{font-size:11px;letter-spacing:2px;color:var(--dim);margin-top:2px}
+@media(max-width:700px){
+  .cta{flex-direction:column}
+  .btn{width:100%}
+}
+@media(max-width:400px){
+  h1{font-size:34px;letter-spacing:2px}
+  .stats{gap:20px}
+  .stats .num{font-size:24px}
+}
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<canvas id="bg"></canvas>
+<div class="sky-glow"></div>
+<div class="aurora"></div>
+<div class="abyss"></div>
+<div class="noise"></div>
+<div id="transition" class="cover"><span class="t-txt">Hadasphere</span><div class="bar"><i></i></div></div>
+
+<header>
+  <div class="container">
+    <a class="brand" href="index.html"><img src="logo.png" alt="Hadasphere">Hadasphere</a>
+    <nav>
+      <a href="index.html" class="active">Home</a>
+      <a href="devlog.html">Dev Log</a>
+      <a href="progress.html">Progress</a>
+      <a href="feedback.html">Feedback</a>
+      <a href="guides.html">Guides</a>
+      <a href="discord.html">Discord</a>
+    </nav>
+    <button class="menu-btn" id="menu-btn" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="container">
+    <div class="badge"><span class="dot"></span> IN DEVELOPMENT · NOT RELEASED</div>
+    <h1>Hadasphere</h1>
+    <p class="tagline">Beyond the sky, below the abyss.</p>
+    <p class="hero-note">"To create the dream we all need, it's not that hard, right?"</p>
+    <div class="cta">
+      <a class="btn discord" href="https://discord.gg/5jfzhHTSVt" target="_blank" rel="noopener">JOIN THE DISCORD</a>
+      <a class="btn ghost" href="progress.html">SEE DEV PROGRESS</a>
+    </div>
+    <div class="stats">
+      <div><div class="num" id="stat-drafts">0</div><div class="lbl">DRAFTS</div></div>
+      <div><div class="num" id="stat-wips">0</div><div class="lbl">IN PROGRESS</div></div>
+      <div><div class="num" id="stat-done">0</div><div class="lbl">COMPLETED</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="brand"><img src="logo.png" alt="Hadasphere">Hadasphere</div>
+  <p>Hadasphere is an independently developed Roblox game. Not released yet.</p>
+  <p class="notaff">Not affiliated with or endorsed by Roblox Corporation.</p>
+</footer>
+
+<script>
+// ===== STATS =====
+const STAT_MAP={draft:'stat-drafts',wip:'stat-wips',done:'stat-done'};
+window.__pageReady=new Promise(res=>{
+  fetch('devlog.json')
+    .then(r=>r.json())
+    .then(data=>{
+      if(Array.isArray(data)&&data.length>0){
+        Object.keys(STAT_MAP).forEach(k=>{
+          document.getElementById(STAT_MAP[k]).textContent=data.filter(e=>e.status===k).length;
+        });
+      }
+      res();
+    })
+    .catch(()=>res());
+});
+</script>
+<script src="script.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>

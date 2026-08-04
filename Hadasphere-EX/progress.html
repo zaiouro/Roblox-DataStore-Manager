@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0714">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Game Progress</title>
+  <meta name="description" content="Hadasphere ??game progress. How far the Roblox game itself has come.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="transition.css">
+<style>
+#progress{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-height:72vh}
+#progress-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.prog-item{background:#0d1119;border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.prog-item .prog-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.prog-item .prog-name{font-size:13px;letter-spacing:1px;color:#fff}
+.prog-item .prog-pct{font-size:13px;font-weight:700;color:var(--violet)}
+.prog-bar{height:6px;background:#0a0d14;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:3px;transition:width 1s ease}
+.prog-note{font-size:12px;color:var(--dim);font-style:italic;margin-top:16px;text-align:center}
+@media(max-width:700px){
+  #progress-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<canvas id="bg"></canvas>
+<div class="sky-glow"></div>
+<div class="aurora"></div>
+<div class="abyss"></div>
+<div class="noise"></div>
+<div id="transition" class="cover"><span class="t-txt">Hadasphere</span><div class="bar"><i></i></div></div>
+
+<header>
+  <div class="container">
+    <a class="brand" href="index.html"><img src="logo.png" alt="Hadasphere">Hadasphere</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="devlog.html">Dev Log</a>
+      <a href="progress.html" class="active">Progress</a>
+      <a href="feedback.html">Feedback</a>
+      <a href="guides.html">Guides</a>
+      <a href="discord.html">Discord</a>
+    </nav>
+    <button class="menu-btn" id="menu-btn" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="page" id="progress">
+  <div class="container">
+    <div class="sec-head">
+      <h2>Game Progress</h2>
+      <p>How far the Roblox game itself has come. Updated as development moves forward.</p>
+    </div>
+    <div id="progress-grid"></div>
+    <p id="progress-note" class="prog-note"></p>
+  </div>
+</section>
+
+<footer>
+  <div class="brand"><img src="logo.png" alt="Hadasphere">Hadasphere</div>
+  <p>Hadasphere is an independently developed Roblox game. Not released yet.</p>
+  <p class="notaff">Not affiliated with or endorsed by Roblox Corporation.</p>
+</footer>
+
+<script>
+// ===== GAME PROGRESS DATA =====
+// Edit the percentage here as you develop. 0 = not started, 100 = done.
+const GAME_PROGRESS={
+  started:false,
+  stages:[
+    {name:'Concept & Story',pct:0},
+    {name:'World Building',pct:0},
+    {name:'Gameplay Mechanics',pct:0},
+    {name:'Maps / Environments',pct:0},
+    {name:'Scripting & Code',pct:0},
+    {name:'Art & Sound',pct:0},
+    {name:'Testing',pct:0},
+    {name:'Release',pct:0}
+  ]
+};
+function renderProgress(){
+  const grid=document.getElementById('progress-grid');
+  grid.innerHTML='';
+  GAME_PROGRESS.stages.forEach(s=>{
+    const item=document.createElement('div');
+    item.className='prog-item';
+    item.innerHTML=`
+      <div class="prog-head"><span class="prog-name">${s.name}</span><span class="prog-pct">${s.pct}%</span></div>
+      <div class="prog-bar"><div class="prog-fill" data-pct="${s.pct}"></div></div>
+    `;
+    grid.appendChild(item);
+  });
+  document.getElementById('progress-note').textContent=
+    GAME_PROGRESS.started
+      ? 'Development is underway. Progress updates are logged as work is completed.'
+      : 'Development has not started yet. Progress will be tracked here as the game is built.';
+  setTimeout(()=>{
+    document.querySelectorAll('.prog-fill').forEach(f=>{f.style.width=f.dataset.pct+'%';});
+  },100);
+}
+renderProgress();
+</script>
+<script src="script.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>
