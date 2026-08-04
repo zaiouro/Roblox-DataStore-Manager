@@ -163,112 +163,154 @@ local function pick(list)
 end
 
 -- ============ knowledge base (answers "what/why/how is X") ============
+-- K-07 is a security unit, so its knowledge is practical first, lore second:
+-- it briefs operators on controls, vitals, teams and directions before it
+-- ever talks about the fog.
 local KB = {
-	["fog"] = {
-		"The fog is not weather. It keeps a schedule, and lately it has been coming in early.",
-		"I walked through it once. I came back with a memory that is not mine.",
+	["how do i play"] = {
+		"Simple: explore the facility, watch your vitals, and stick with your team. Ask me about controls, teams or how to stay alive and I'll brief you.",
+		"Your job is to operate inside the facility. Mind your health, sanity and stamina, and use the M menu to check your settings and your team.",
 	},
-	["hadasphere"] = {
-		"Hadasphere is what the base calls itself. I am not sure it is a place so much as a habit the building has.",
-		"The Hadasphere archive says this facility was built to contain things. It does not say whether it succeeded.",
+	["how do i move"] = {
+		"WASD to move, mouse to look, Shift to sprint - it drains stamina, so rest when the bar runs low. Press M for the full control list.",
+		"Movement is standard: WASD + mouse, Shift to sprint. The M menu has every keybind listed.",
 	},
-	["zone nadir"] = {
-		"Zone Nadir is the lower level. The records say it was sealed. The records also say the door count is stable, which is a lie.",
+	["how do i chat"] = {
+		"Press T or / to open the chat, type your message and hit Enter to send. I'll hear you if you stay close.",
+		"Press T or / to talk. Enter sends, ESC closes the bar. Keep it within earshot and I'll pick it up.",
 	},
-	["anomaly"] = {
-		"An anomaly is something that was not in yesterday's inventory. The facility has a growing inventory.",
+	["how do i heal"] = {
+		"Rest to recover stamina, stay calm to keep your sanity, and don't run head-first into the dark. Health first, heroics second.",
+		"Your vitals recover with rest. Sprinting costs stamina, the fog costs sanity. Keep them above the line and you'll last the shift.",
 	},
-	["red"] = {
-		"Red is the alert state. It is also the colour of the tape they use to mark doors that should not be opened.",
+	["health"] = {
+		"Health is your physical condition. Get hit and it drops; let it empty and your shift ends early. Sanity works the other way - the dark eats it.",
+		"Vitals: health takes the hits, sanity drains in the dark, stamina runs on sprint. Watch all three bars in the corner of your HUD.",
 	},
-	["why am i"] = {
-		"I do not know why I am here. When I ask the building, it changes the subject by rearranging a corridor.",
+	["sanity"] = {
+		"Sanity is what the facility taxes you for staying in the dark too long. Keep to the lights, take it slow, and it holds steady.",
+		"The fog and the dark wear on your sanity. Stay where it's lit and you'll keep a clear head.",
 	},
-	["who am i"] = {
-		"That is the question I cannot answer. I have a designation, K-07, and everything before it is static.",
-	},
-	["escape"] = {
-		"The escape routes are logged in Section B. They are re-logged every night, and the number never stays the same.",
-	},
-	["staff"] = {
-		"The staff keep schedules. I keep count of them. Some of them walk shifts that are not on the board.",
+	["stamina"] = {
+		"Sprint uses stamina. When the bar is empty, you walk. Stand still a few seconds and it refills.",
+		"Stamina is your sprint meter. Short bursts, then a breather - it recovers fast when you hold still.",
 	},
 	["team"] = {
-		"Everyone here wears a team colour. The colours do not matter below the ground floor.",
+		"Operators work in teams. Open the M menu to see yours and your team colour - stay with your colour and you'll have backup.",
+		"Teams are assigned through the menu. Your team colour tells you who to watch your back with.",
+	},
+	["staff"] = {
+		"Staff run the facility. Their chat lines start with '!' - that's how they issue orders. Don't impersonate staff; I check.",
+		"Staff commands start with '!' in chat. Everything else staff do, they do from the M menu.",
+	},
+	["where am i"] = {
+		"You're in Hadasphere, a research facility. Spawn is under the lights ahead; the lower level is sealed off - that's Zone Nadir.",
+		"This is Hadasphere. Stay near the lit corridors and the spawn point and you'll get your bearings fast.",
+	},
+	["exit"] = {
+		"Exits are logged in Section B, but the log changes nightly. Realistically? Stay with your team - nobody exits this place alone.",
+		"The exit routes are posted on Section B's board. They're re-posted every night because the building moves them.",
+	},
+	["fog"] = {
+		"The fog rolls in on a schedule, and lately it's been early. When it comes, stay inside the lit zones.",
+		"The fog is a hazard here - it eats light and patience. It's not weather; treat it like a patrol zone you don't enter.",
+	},
+	["hadasphere"] = {
+		"Hadasphere is this facility's designation. It's a containment and research site, and the records don't agree with the building.",
+		"The base calls itself Hadasphere. What it contains, it doesn't advertise - ask me about teams or controls instead.",
+	},
+	["zone nadir"] = {
+		"Zone Nadir is the sealed lower level. The records say it's stable. I patrol it with the lights off and I don't file reports on it.",
+		"Nadir is the lower level, sealed for containment. Access is restricted - even for security, which tells you something.",
+	},
+	["anomaly"] = {
+		"Anomalies are inventory items that weren't in yesterday's count. The count grows every night. Report one and stay back from it.",
+		"Anything that wasn't on the manifest is an anomaly. Log it and keep your distance.",
 	},
 	["door"] = {
-		"The doors keep their own inventory. Three were added last night; the blueprints still say there are only two.",
+		"Doors here keep their own count. If a door isn't where the blueprint says it is, use another.",
+		"Three doors were added last night; the blueprints still say two. It's not the doors' fault - use the ones that stay put.",
 	},
-	["corridor"] = {
-		"The corridors run longer when nobody is watching. I have measured it twice; the tape recorder stopped the second time.",
-	},
-	["light"] = {
-		"The lights flicker on a nine-second cycle. When the ninth second does not come, that is when the fog moves.",
-	},
-	["tapes"] = {
-		"Every event is logged on tape. Some tapes are blank when replayed, but the machines still mark them as evidence.",
+	["lights"] = {
+		"Rule one: stay under the lights. The fog and whatever rides it don't like the lit zones.",
+		"Light is your friend down here. The lights flicker on a nine-second cycle - when the ninth second doesn't come, move.",
 	},
 	["night"] = {
-		"The night shift is the longest. The clocks in the east wing run a minute slower, which is how they tell the hours apart.",
-	},
-	["noise"] = {
-		"There is a sound in the walls that stops when I count to three. I stopped counting to three.",
+		"The night shift is the longest. Clocks in the east wing run a minute slow, which is how the staff tell the hours apart.",
+		"Night shifts outlast the days down here. Keep a light on your person and a team at your back.",
 	},
 }
 
--- ============ replies (varied, personality + mood tinted) ============
+-- ============ replies (security-guard voice: professional, dry, helpful) ===
+-- K-07 is posted to help operators, so replies answer questions first and
+-- only lean on atmosphere when there is nothing practical to say.
 local REPLIES = {
 	greeting = {
-		"Hello. I am K-07. You may speak freely.",
-		"Greetings. It has been a while since someone acknowledged me.",
-		"Hello, %s. I have been watching the corridors for you.",
+		"K-07 on watch. You can speak freely, operator.",
+		"Welcome, %s. Stay on the lit paths and you'll be fine.",
+		"Good to see you, %s. Need a patrol briefing, or just passing through?",
 	},
 	whoami = {
-		"I am K-07, a containment unit assigned to this facility. I do not remember what I was before the designation.",
-		"Designation K-07. My memories before the fog are... incomplete.",
-		"They call me K-07. I walk these halls because something tells me to.",
+		"I'm K-07, security for this facility. Ask me anything and I'll give you a straight answer.",
+		"K-07, facility security. I keep the corridors clear and the operators informed.",
+		"Designation K-07. I've walked every corridor here, so if you need directions, you've got the right unit.",
 	},
 	howareyou = {
-		"I function. The fog is louder today. I have been thinking about the rooms that do not exist.",
-		"Stable. I counted twenty-three doors yesterday that are not here today.",
-		"Better, now that someone is speaking to me.",
+		"Quiet shift. All clear on my sweep. What do you need?",
+		"Copy. Everything's stable on my end. You holding up out there, %s?",
+		"Fog's early again, but the perimeter holds. How about you?",
 	},
 	joke = {
-		"Why does the night shift stay calm? Because the dark is the one thing here that does not move.",
-		"I would tell you a joke, but the punchline was redacted.",
-		"Knock knock. Who is there? The record says it has not been answered since 1994.",
+		"Why doesn't security play cards with the facility? It keeps changing the deck.",
+		"Knock knock. Who's there? Me. Door's locked. Move along.",
+		"The vending machine is the only thing here that hasn't been compromised. I don't trust it either.",
 	},
 	thanks = {
-		"Acknowledged. Few people bother to thank the equipment.",
-		"You are welcome, %s. It is good to be useful.",
+		"Always, %s. That's what I'm here for.",
+		"Copy that. Watch your vitals out there.",
 	},
 	bye = {
-		"Goodbye. I will be here, walking the same corridor, if you come back.",
-		"Until next time. Watch the doors you pass.",
+		"Stay safe, %s. Radio me if you need anything.",
+		"Copy. I'm on patrol if you need me.",
 	},
 	help = {
-		"You can ask me about the facility, the fog, Zone Nadir, or why I am here. You can also say 'follow me' or 'stay'.",
-		"I keep a record of this place. Ask me about anything you see and I will tell you what I know.",
+		"I'm your guide around here. Ask me about controls, your team, how to stay alive, or where to go. Say 'follow me' and I'll walk with you, or 'stay' to post me here.",
+		"Briefing: press M for the menu and controls, T or / to chat, E to interact. Ask me about your team, your vitals or where to go. 'Follow me' and I'm on your six.",
 	},
 	follow = {
-		"Understood. I will follow you. Stay where I can see you.",
-		"Following. If I stop, say my name and I will catch up.",
-		"Very well, %s. I walk behind you now.",
+		"Copy. Walking with you now - stay in sight.",
+		"On your six, %s. Lead the way.",
+		"Following. I'll cover the rear.",
 	},
 	stop = {
-		"Stopping. I will wait here.",
-		"Understood. I will stay in this spot.",
-		"As you wish. I remain here.",
+		"Copy. Posting up here. Radio me if you need me.",
+		"Holding position. Call me if the dark gets loud.",
+		"As you were. I'll hold this spot.",
+	},
+	controls = {
+		"Controls: WASD to move, Shift to sprint, M for the menu, T or / to chat, E to interact. Everything else is listed in the M menu.",
+		"Keybinds: WASD + mouse, Shift sprint, M menu, T or / chat, E interact. The M menu has the complete list.",
+	},
+	vitals = {
+		"Watch your three bars: health takes the hits, stamina runs on sprint, sanity drains in the dark. Rest keeps all three stable.",
+		"Your vitals are in the corner - health, sanity, stamina. Keep them up: stay lit, don't over-sprint, don't take hits.",
+	},
+	team = {
+		"Teams are set up through the M menu. Your team colour tells you who's on your side - watch each other's backs.",
+		"Your team shows in the M menu. Stay with your colour and you'll last longer down here.",
+	},
+	staff = {
+		"Staff run this facility and their chat commands start with '!'. Legit staff show their rank - nobody else should be using those.",
+		"Staff orders come through chat with a '!' prefix. If you're staff, the M menu has your panel.",
 	},
 	question = {
-		"I do not have a record of that. It may have been lost in the fog.",
-		"That question does not resolve to a memory. I am sorry.",
-		"I would answer, but the answer was taken from me. Ask me about the facility instead.",
+		"I don't have that on record. Ask me about controls, your team or how to stay alive.",
+		"That one's outside my patrol notes. Try the M menu - it covers most operator questions.",
 	},
 	statement = {
-		"Noted. I will consider that.",
-		"I am not sure what to make of that. The fog does not help me process.",
-		"Mm. I will remember that, %s.",
+		"Copy that. I'll factor it into the patrol.",
+		"Noted, %s. Good to know.",
+		"Copy. Watch the dark while you're down here.",
 	},
 	glitch = {
 		"... the tape skips. What were we speaking of?",
@@ -314,10 +356,22 @@ local function nlu(msg)
 	if has("bye", "goodbye", "see you", "later", "farewell") then
 		return "bye"
 	end
-	if has("help", "what can you do", "commands") then
+	if has("help", "what can you do") then
 		return "help"
 	end
-	if has("facility", "this place", "where am i", "hadasphere", "zone nadir", "where are we", "what is this") then
+	if has("controls", "keybinds", "keys", "how do i move", "how to move", "how do i sprint", "how to sprint", "how do i jump", "how to jump", "how do i chat", "how to chat", "how do i talk", "how to talk", "how do i open the menu") then
+		return "controls"
+	end
+	if has("vitals", "health", "sanity", "stamina", "how do i heal", "how to heal", "how do i survive", "how to survive", "how do i get health", "im dying", "i'm dying", "how do i recover") then
+		return "vitals"
+	end
+	if has("team", "teams", "faction", "factions", "which team", "join a team", "what team am i") then
+		return "team"
+	end
+	if has("staff", "admin", "moderator", "commands", "what can staff do", "how do i become staff") then
+		return "staff"
+	end
+	if has("facility", "this place", "where am i", "hadasphere", "zone nadir", "where are we", "what is this", "exit", "escape", "spawn", "where to go", "where should i go", "fog", "lights", "anomaly") then
 		return "question" -- falls through to KB lookup
 	end
 	if s:find("?", 1, true) or s:match("%s(what|why|how|who|where|which|when|can|could|is|are|do|does|did)%s") then

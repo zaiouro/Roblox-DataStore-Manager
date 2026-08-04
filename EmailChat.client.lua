@@ -293,19 +293,30 @@ UserInputService.InputBegan:Connect(function(inp, processed)
 	end
 end)
 
--- screen chat log (bottom-left, above the chat button) so you can always
--- see messages - including your own - regardless of camera angle
+-- screen chat log (bottom-left) so you can always see messages - including
+-- your own - regardless of camera angle. The panel is deliberately subtle:
+-- translucent so it never fights the scene.
 local logFrame = mk("Frame", {
 	AnchorPoint = Vector2.new(0, 1),
 	Position = UDim2.new(0, 16, 1, -64),
-	Size = UDim2.new(0, 380, 0, 160),
-	BackgroundTransparency = 1,
+	AutomaticSize = Enum.AutomaticSize.Y,
+	Size = UDim2.new(0, 380, 0, 0),
+	BackgroundColor3 = COLORS.panel,
+	BackgroundTransparency = 0.45,
+	BorderSizePixel = 0,
 	ZIndex = 2,
 })
+mk("UICorner", { CornerRadius = UDim.new(0, 10) }, logFrame)
+mk("UIStroke", { Color = COLORS.line, Thickness = 1, Transparency = 0.6 }, logFrame)
+mk("UIPadding", {
+	PaddingTop = UDim.new(0, 6),
+	PaddingBottom = UDim.new(0, 6),
+	PaddingLeft = UDim.new(0, 10),
+	PaddingRight = UDim.new(0, 10),
+}, logFrame)
 mk("UIListLayout", {
 	SortOrder = Enum.SortOrder.LayoutOrder,
-	VerticalAlignment = Enum.VerticalAlignment.Bottom,
-	Padding = UDim.new(0, 4),
+	Padding = UDim.new(0, 3),
 }, logFrame)
 
 local MAX_LOG = 6
@@ -314,7 +325,7 @@ local logLines = 0
 local function pushLog(fromName, text, isStaff, isNpc)
 	logLines = logLines + 1
 	local line = mk("TextLabel", {
-		Size = UDim2.new(0, 380, 0, 18),
+		Size = UDim2.new(0, 360, 0, 16),
 		BackgroundTransparency = 1,
 		Font = Enum.Font.Code,
 		TextSize = 13,
