@@ -303,12 +303,11 @@ local logFrame = mk("Frame", {
 	BackgroundTransparency = 1,
 	ZIndex = 2,
 })
-local logLayout = mk("UIListLayout", {
+mk("UIListLayout", {
 	SortOrder = Enum.SortOrder.LayoutOrder,
 	VerticalAlignment = Enum.VerticalAlignment.Bottom,
 	Padding = UDim.new(0, 4),
 }, logFrame)
-logLayout:GetPropertyChangedSignal("AbsolutePosition"):Connect(function() end)
 
 local MAX_LOG = 6
 local logLines = 0
