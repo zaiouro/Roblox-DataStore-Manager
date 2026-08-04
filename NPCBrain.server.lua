@@ -123,6 +123,7 @@ local memory = {
 	talker = nil,      -- player we are conversing with
 	greeted = {},      -- userId -> last greet time
 	interactions = 0,
+	mood = 0.55,       -- 0..1, drifts with interactions
 	lastConverse = 0,
 	lastGreet = 0,
 }
