@@ -114,7 +114,6 @@ local function apply()
 		emitter.Rotation = NumberRange.new(0, 360)
 		emitter.RotSpeed = NumberRange.new(-40, 40)
 		emitter.SpreadAngle = Vector2.new(180, 180)
-		emitter.MaxDistance = 60
 		emitter.Parent = spawn
 	end
 end
