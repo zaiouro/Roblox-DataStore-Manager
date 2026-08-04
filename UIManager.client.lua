@@ -25,19 +25,19 @@ local staffActionEvent = remotes:WaitForChild("StaffAction")
 local sprintEvent = remotes:WaitForChild("Sprint")
 local chatRemote = remotes:WaitForChild("Chat")
 
--- ============ palette (dark analog-horror: desaturated green-black,
--- tape-white text, blood accent) ============
+-- ============ palette (BXBC-style dark terminal, blue scale from light to
+-- dark: ice-white-blue text, deep navy panels, electric accent) ============
 local COLORS = {
-	bg = Color3.fromRGB(5, 8, 7),
-	panel = Color3.fromRGB(13, 17, 15),
-	line = Color3.fromRGB(34, 45, 40),
-	text = Color3.fromRGB(201, 211, 204),
-	dim = Color3.fromRGB(104, 118, 109),
-	accent = Color3.fromRGB(138, 42, 42),
-	green = Color3.fromRGB(92, 140, 100),
-	red = Color3.fromRGB(176, 58, 58),
-	blue = Color3.fromRGB(96, 132, 140),
-	energy = Color3.fromRGB(201, 162, 39),
+	bg = Color3.fromRGB(4, 9, 18),
+	panel = Color3.fromRGB(10, 18, 34),
+	line = Color3.fromRGB(36, 58, 96),
+	text = Color3.fromRGB(188, 214, 240),
+	dim = Color3.fromRGB(108, 138, 174),
+	accent = Color3.fromRGB(88, 152, 228),
+	green = Color3.fromRGB(88, 150, 130),
+	red = Color3.fromRGB(190, 70, 70),
+	blue = Color3.fromRGB(120, 170, 220),
+	energy = Color3.fromRGB(170, 190, 235),
 }
 
 -- one typeface for the whole game: a clean monospace that reads like the
@@ -526,60 +526,47 @@ end)
 -- Teaches the controls that aren't obvious: M = menu (contains controls),
 -- T or / = chat, E = interact.
 local function openingAnnouncement()
-	local lines = {
-		"Press M for the menu — controls are listed there",
-		"Press T or / to chat",
-		"Press E to interact",
-	}
-	local card = mk("Frame", {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -14, 0, 12),
-		Size = UDim2.new(0, 420, 0, 86),
+	-- one auto-sized label: no layout needed, can never overlap, and the
+	-- card hugs its content so there is no dead space
+	local card = mk("CanvasGroup", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -84),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Size = UDim2.new(0, 340, 0, 0),
 		BackgroundColor3 = COLORS.panel,
 		BorderSizePixel = 0,
+		GroupTransparency = 1,
 		ZIndex = 5,
 	})
 	mk("UICorner", { CornerRadius = UDim.new(0, 10) }, card)
-	mk("UIStroke", { Color = COLORS.accent, Thickness = 1, Transparency = 0.3 }, card)
-
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0, 10)
-	pad.PaddingBottom = UDim.new(0, 10)
-	pad.PaddingLeft = UDim.new(0, 14)
-	pad.PaddingRight = UDim.new(0, 14)
-	pad.Parent = card
-
-	mk("UIListLayout", {
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Padding = UDim.new(0, 4),
+	mk("UIStroke", { Color = COLORS.accent, Thickness = 1, Transparency = 0.4 }, card)
+	mk("UIPadding", {
+		PaddingTop = UDim.new(0, 9),
+		PaddingBottom = UDim.new(0, 9),
+		PaddingLeft = UDim.new(0, 13),
+		PaddingRight = UDim.new(0, 13),
 	}, card)
 
-	local group = Instance.new("CanvasGroup")
-	group.Size = UDim2.fromScale(1, 1)
-	group.BackgroundTransparency = 1
-	group.GroupTransparency = 1
-	group.Parent = card
+	mk("TextLabel", {
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Size = UDim2.new(1, 0, 0, 0),
+		BackgroundTransparency = 1,
+		Font = FONT,
+		TextSize = 13,
+		TextColor3 = COLORS.dim,
+		RichText = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		Text = "<font color='#" .. COLORS.accent:ToHex() .. "'><b>// controls</b></font>  M menu - controls here    T or / chat    E interact",
+	}, card)
 
-	for i, line in ipairs(lines) do
-		mk("TextLabel", {
-			Text = line,
-			Font = FONT,
-			TextSize = 13,
-			TextColor3 = i == 1 and COLORS.text or COLORS.dim,
-			BackgroundTransparency = 1,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, 0, 0, 18),
-			LayoutOrder = i,
-		}, group)
-	end
-
-	local fadeIn = TweenService:Create(group, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	local fadeIn = TweenService:Create(card, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		GroupTransparency = 0,
 	})
 	fadeIn:Play()
 
 	task.delay(6, function()
-		local fadeOut = TweenService:Create(group, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		local fadeOut = TweenService:Create(card, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			GroupTransparency = 1,
 		})
 		fadeOut:Play()

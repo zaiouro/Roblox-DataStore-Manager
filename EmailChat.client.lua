@@ -52,13 +52,14 @@ gui.DisplayOrder = 2 -- above the main HUD gui
 gui.Parent = playerGui
 
 local COLORS = {
-	bg = Color3.fromRGB(5, 8, 7),
-	panel = Color3.fromRGB(13, 17, 15),
-	line = Color3.fromRGB(34, 45, 40),
-	text = Color3.fromRGB(201, 211, 204),
-	dim = Color3.fromRGB(104, 118, 109),
-	accent = Color3.fromRGB(138, 42, 42),
-	staff = Color3.fromRGB(255, 200, 90),
+	bg = Color3.fromRGB(4, 9, 18),
+	panel = Color3.fromRGB(11, 20, 38),
+	line = Color3.fromRGB(38, 62, 104),
+	text = Color3.fromRGB(188, 214, 240),
+	dim = Color3.fromRGB(108, 138, 174),
+	accent = Color3.fromRGB(88, 152, 228),
+	npc = Color3.fromRGB(150, 200, 255),
+	staff = Color3.fromRGB(255, 205, 90),
 }
 
 local function mk(className, props, parent)
@@ -113,7 +114,11 @@ local function pushBubble(uid, fromName, text, isStaff, npcModel)
 		if not sender then return end
 		head = headOf(sender)
 	end
-	if not head then return end
+	if not head then
+		print("[EmailChat] bubble skipped: no head (from=" .. fromName .. ", npc=" .. tostring(npcModel ~= nil) .. ")")
+		return
+	end
+	print("[EmailChat] bubble shown: " .. fromName .. " -> " .. head:GetFullName())
 
 	local count = activeBubbles[uid] or 0
 	activeBubbles[uid] = count + 1
@@ -128,9 +133,9 @@ local function pushBubble(uid, fromName, text, isStaff, npcModel)
 	bill.Parent = head
 
 	local nameTag = isStaff and "[STAFF] " or (npcModel and "[" .. fromName .. "] " or "")
-	local nameColor = isStaff and COLORS.staff or (npcModel and Color3.fromRGB(120, 210, 200) or COLORS.accent)
+	local nameColor = isStaff and COLORS.staff or (npcModel and COLORS.npc or COLORS.accent)
 	local bubble = Instance.new("TextLabel")
-	bubble.BackgroundColor3 = isStaff and Color3.fromRGB(28, 24, 16) or Color3.fromRGB(11, 15, 13)
+	bubble.BackgroundColor3 = isStaff and Color3.fromRGB(28, 24, 16) or COLORS.panel
 	bubble.BorderSizePixel = 0
 	bubble.AutomaticSize = Enum.AutomaticSize.XY
 	bubble.Size = UDim2.fromOffset(0, 0)
@@ -249,13 +254,13 @@ local function setTyping(uid, typing)
 	bill.Parent = head
 
 	local label = Instance.new("TextLabel")
-	label.BackgroundColor3 = Color3.fromRGB(11, 15, 13)
+	label.BackgroundColor3 = COLORS.panel
 	label.BorderSizePixel = 0
 	label.AutomaticSize = Enum.AutomaticSize.XY
 	label.Size = UDim2.fromOffset(0, 0)
 	label.Font = Enum.Font.Code
 	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(168, 160, 90)
+	label.TextColor3 = COLORS.npc
 	label.Text = (sender.DisplayName or sender.Name) .. " is typing..."
 	label.Parent = bill
 
@@ -322,7 +327,7 @@ local function pushLog(fromName, text, isStaff, isNpc)
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		RichText = true,
-		Text = "<font color='#" .. (isStaff and COLORS.staff:ToHex() or (isNpc and Color3.fromRGB(120, 210, 200):ToHex() or COLORS.accent:ToHex())) .. "'><b>" .. escapeRichText(fromName) .. ":</b></font> " .. escapeRichText(text),
+		Text = "<font color='#" .. (isStaff and COLORS.staff:ToHex() or (isNpc and COLORS.npc:ToHex() or COLORS.accent:ToHex())) .. "'><b>" .. escapeRichText(fromName) .. ":</b></font> " .. escapeRichText(text),
 		TextColor3 = COLORS.text,
 		LayoutOrder = logLines,
 	}, logFrame)
@@ -342,6 +347,7 @@ chatRemote.OnClientEvent:Connect(function(data)
 	local text = tostring(data.text or "")
 	local isStaff = data.staff == true
 	local npcModel = findNpcModel(data)
+	print("[EmailChat] rx from=" .. from .. " uid=" .. tostring(uid) .. " npc=" .. tostring(npcModel) .. " text=" .. text)
 	if #text == 0 then return end
 	setTyping(uid, false)
 	pushBubble(uid, from, text, isStaff, npcModel)
