@@ -12,7 +12,7 @@ local Lighting = game:GetService("Lighting")
 local AMBIENT = Color3.fromRGB(88, 96, 90)
 local SHIFT_TOP = Color3.fromRGB(150, 150, 138)
 local SHIFT_BOTTOM = Color3.fromRGB(40, 44, 42)
-local FOG = Color3.fromRGB(58, 66, 62)
+local FOG = Color3.fromRGB(52, 64, 82)
 
 local function apply()
 	pcall(function()
@@ -120,3 +120,60 @@ end
 
 apply()
 print("[LightingConfig] dark atmosphere applied")
+
+-- ============ fog schedule ============
+-- The NPC lore says the fog "rolls in on a schedule, and lately it has been
+-- coming in early". This makes it true: a repeating cycle where visibility
+-- slowly collapses into heavy fog, holds, then lifts - and every cycle the
+-- fog arrives a little early or a little late, so nobody can time it.
+local FOG_CYCLE = 72        -- base seconds for one full clear->fog->clear cycle
+local CLEAR_END = 550       -- best visibility (matches the apply() baseline)
+local CLEAR_START = 90
+local FOGGED_END = 60       -- thickest fog - walls of fog, but never blindness
+local FOGGED_START = 8
+local HOLD_TIME = 18        -- how long the fog squats on the map
+
+local function lerp(a, b, t)
+	return a + (b - a) * t
+end
+
+local function setFog(fogStart, fogEnd)
+	pcall(function()
+		Lighting.FogStart = fogStart
+	end)
+	pcall(function()
+		Lighting.FogEnd = fogEnd
+	end)
+end
+
+-- step a fog transition smoothly over `duration` seconds
+local function runPhase(duration, fromStart, fromEnd, toStart, toEnd, fromDensity, toDensity)
+	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+	local steps = math.max(1, math.floor(duration / 0.25))
+	for i = 1, steps do
+		local t = i / steps
+		setFog(lerp(fromStart, toStart, t), lerp(fromEnd, toEnd, t))
+		if atmo then
+			pcall(function()
+				atmo.Density = lerp(fromDensity, toDensity, t)
+			end)
+		end
+		task.wait(0.25)
+	end
+end
+
+task.spawn(function()
+	-- let the base atmosphere apply before the fog starts moving
+	task.wait(6)
+	while true do
+		local cycle = FOG_CYCLE + math.random(-10, 10)
+		print("[LightingConfig] fog cycle (" .. cycle .. "s) - rolling in")
+		runPhase(16, CLEAR_START, CLEAR_END, FOGGED_START, FOGGED_END, 0.18, 0.55)
+		print("[LightingConfig] fog thick - holding")
+		runPhase(HOLD_TIME, FOGGED_START, FOGGED_END, FOGGED_START, FOGGED_END, 0.55, 0.55)
+		print("[LightingConfig] fog lifting")
+		runPhase(16, FOGGED_START, FOGGED_END, CLEAR_START, CLEAR_END, 0.55, 0.18)
+		local clearHold = math.max(8, cycle - 16 - HOLD_TIME - 16)
+		task.wait(clearHold)
+	end
+end)
