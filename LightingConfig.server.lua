@@ -252,8 +252,11 @@ end
 task.spawn(function()
 	-- let the base atmosphere apply before any event can start
 	task.wait(8)
+	local first = true
 	while true do
-		local clearTime = EVENT_MIN + math.random(0, EVENT_MAX - EVENT_MIN)
+		-- first event fires early so the fog can be tested quickly
+		local clearTime = first and 15 or EVENT_MIN + math.random(0, EVENT_MAX - EVENT_MIN)
+		first = false
 		print("[LightingConfig] next fog event in " .. clearTime .. "s")
 		task.wait(clearTime)
 
