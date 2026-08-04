@@ -138,63 +138,68 @@ local function apply()
 	end
 
 	local center = fogAnchor.CFrame.Position
-	local directions = 8
-	local bands = { 70, 130, 190 } -- three rings: near, mid, far
-	for bandIdx, radius in ipairs(bands) do
-		for d = 0, directions - 1 do
-			local ang = (d / directions) * math.pi * 2
-			local off = Vector3.new(
-				math.cos(ang) * radius,
-				8 + (bandIdx - 1) * 7 + math.random() * 5,
-				math.sin(ang) * radius
-			)
-			local e = Instance.new("ParticleEmitter")
-			e.Name = "FogBank"
-			e.Texture = "rbxasset://textures/particles/smoke_main.dds"
-			e.LightEmission = 0.12
-			e.LightInfluence = 0
-			-- far bands drift faster so the fog arrives from the distance
-			e.Speed = NumberRange.new(1 + (bandIdx - 1), 2 + (bandIdx - 1) * 1.5)
-			e.Lifetime = NumberRange.new(14, 22)
-			e.Rate = 0.05
-			e.Size = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 7),
-				NumberSequenceKeypoint.new(1, 20),
-			})
-			e.Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 0.35),
-				NumberSequenceKeypoint.new(0.5, 0.55),
-				NumberSequenceKeypoint.new(1, 0.8),
-			})
-			e.Color = ColorSequence.new(FOG)
-			e.Rotation = NumberRange.new(0, 360)
-			e.RotSpeed = NumberRange.new(-4, 4)
-			e.SpreadAngle = Vector2.new(60, 60)
-			local attach = Instance.new("Attachment")
-			attach.Position = off
-			attach.Parent = fogAnchor
-			-- face the centre so the particles drift toward the player area
-			attach.CFrame = CFrame.lookAt(center + off, center)
-			e.Parent = attach
-			fogBanks[#fogBanks + 1] = e
-		end
+	-- one wide ring far outside the play area: particles are born at the
+	-- horizon and drift inward, so fog slowly approaches from beyond the
+	-- world instead of popping up inside it
+	local directions = 20
+	local ringRadius = 320
+	for d = 0, directions - 1 do
+		local ang = (d / directions) * math.pi * 2
+		local radius = ringRadius + math.random(-50, 50)
+		local off = Vector3.new(
+			math.cos(ang) * radius,
+			10 + math.random() * 14,
+			math.sin(ang) * radius
+		)
+		local e = Instance.new("ParticleEmitter")
+		e.Name = "FogBank"
+		e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		e.LightEmission = 0.12
+		e.LightInfluence = 0
+		-- slow drift inward; long lifetime so particles cross the whole ring
+		e.Speed = NumberRange.new(2.5, 4.5)
+		e.Lifetime = NumberRange.new(50, 70)
+		e.Rate = 0.05
+		e.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 4),
+			NumberSequenceKeypoint.new(1, 12),
+		})
+		e.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.5),
+			NumberSequenceKeypoint.new(0.5, 0.65),
+			NumberSequenceKeypoint.new(1, 0.88),
+		})
+		e.Color = ColorSequence.new(FOG)
+		e.Rotation = NumberRange.new(0, 360)
+		e.RotSpeed = NumberRange.new(-3, 3)
+		e.SpreadAngle = Vector2.new(50, 50)
+		local attach = Instance.new("Attachment")
+		attach.Position = off
+		attach.Parent = fogAnchor
+		-- face the centre so the fog travels inward (classic 2-arg CFrame)
+		attach.CFrame = CFrame.new(center + off, center)
+		e.Parent = attach
+		fogBanks[#fogBanks + 1] = e
 	end
 end
 
 apply()
 print("[LightingConfig] dark atmosphere applied")
 
--- ============ fog schedule ============
--- The NPC lore says the fog "rolls in on a schedule, and lately it has been
--- coming in early". This makes it true: a repeating cycle where visibility
--- slowly collapses into heavy fog, holds, then lifts - and every cycle the
--- fog arrives a little early or a little late, so nobody can time it.
-local FOG_CYCLE = 72        -- base seconds for one full clear->fog->clear cycle
+-- ============ fog event ============
+-- The NPC lore: "the lights flicker on a nine-second cycle. When the ninth
+-- second does not come, that is when the fog moves." So the fog is not a
+-- background loop - it is an event: the lights stutter, then the fog rolls
+-- in from beyond the world, squats over the map, and eventually pulls back.
 local CLEAR_END = 550       -- best visibility (matches the apply() baseline)
 local CLEAR_START = 90
-local FOGGED_END = 60       -- thickest fog - walls of fog, but never blindness
-local FOGGED_START = 8
-local HOLD_TIME = 18        -- how long the fog squats on the map
+local FOGGED_END = 55       -- thickest fog - dense, but never blindness
+local FOGGED_START = 6
+local EVENT_MIN = 80        -- seconds of clear between events
+local EVENT_MAX = 150
+local ROLL_IN = 25          -- fog takes its time arriving
+local HOLD_TIME = 45        -- how long the fog squats on the map
+local LIFT_TIME = 22
 
 local function lerp(a, b, t)
 	return a + (b - a) * t
@@ -211,7 +216,7 @@ end
 
 -- drive the visible particle fog banks: 0 = clear, 1 = heavy fog
 local function setFogIntensity(t)
-	local rate = lerp(0.05, 6, t)
+	local rate = lerp(0.05, 3.5, t)
 	for _, e in ipairs(fogBanks) do
 		e.Rate = rate
 	end
@@ -234,18 +239,49 @@ local function runPhase(duration, fromStart, fromEnd, toStart, toEnd, fromDensit
 	end
 end
 
+local function broadcast(title, text)
+	local TeamService = require(script.Parent:WaitForChild("TeamService"))
+	pcall(TeamService.Setup)
+	for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+		pcall(function()
+			TeamService.Notify:FireClient(plr, title, text)
+		end)
+	end
+end
+
 task.spawn(function()
-	-- let the base atmosphere apply before the fog starts moving
-	task.wait(6)
+	-- let the base atmosphere apply before any event can start
+	task.wait(8)
 	while true do
-		local cycle = FOG_CYCLE + math.random(-10, 10)
-		print("[LightingConfig] fog cycle (" .. cycle .. "s) - rolling in")
-		runPhase(16, CLEAR_START, CLEAR_END, FOGGED_START, FOGGED_END, 0.18, 0.55)
+		local clearTime = EVENT_MIN + math.random(0, EVENT_MAX - EVENT_MIN)
+		print("[LightingConfig] next fog event in " .. clearTime .. "s")
+		task.wait(clearTime)
+
+		-- 1) the lights stutter: the ninth second does not come
+		print("[LightingConfig] lights flickering")
+		for _ = 1, 3 do
+			pcall(function()
+				Lighting.Brightness = 0.45
+			end)
+			task.wait(0.12)
+			pcall(function()
+				Lighting.Brightness = 1.1
+			end)
+			task.wait(0.28)
+		end
+		broadcast("The lights flicker", "The ninth second never came. The fog is moving.")
+
+		-- 2) fog rolls in from beyond the world
+		print("[LightingConfig] fog rolling in")
+		runPhase(ROLL_IN, CLEAR_START, CLEAR_END, FOGGED_START, FOGGED_END, 0.18, 0.55)
+
+		-- 3) the fog squats over the map
 		print("[LightingConfig] fog thick - holding")
 		runPhase(HOLD_TIME, FOGGED_START, FOGGED_END, FOGGED_START, FOGGED_END, 0.55, 0.55)
+
+		-- 4) the fog pulls back
 		print("[LightingConfig] fog lifting")
-		runPhase(16, FOGGED_START, FOGGED_END, CLEAR_START, CLEAR_END, 0.55, 0.18)
-		local clearHold = math.max(8, cycle - 16 - HOLD_TIME - 16)
-		task.wait(clearHold)
+		runPhase(LIFT_TIME, FOGGED_START, FOGGED_END, CLEAR_START, CLEAR_END, 0.55, 0.18)
+		broadcast("The fog lifts", "Visibility is returning. The perimeter is clear.")
 	end
 end)
