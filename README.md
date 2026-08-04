@@ -39,6 +39,16 @@ A horror-suspense Roblox game. I wrote the complete script layer (~3,500 lines a
 
 No video — here's how to verify the systems yourself. The scripts print **live debug logs** to the Studio Output window:
 
+### 0. Static analysis passes clean (Luau Language Server)
+All 10 scripts pass full Roblox API type-checking + lint with **0 errors, 0 warnings**:
+
+```
+$ luau-lsp analyze --defs globalTypes.d.luau --sourcemap sourcemap.json --platform roblox
+[INFO] Loading definitions file: @roblox - globalTypes.d.luau
+[INFO] Loading Luau configuration from .luaurc
+(no diagnostics)
+```
+
 ### 1. NPC chat works
 Type near the NPC (within 45 studs) or say "K-07". The Output window shows:
 ```

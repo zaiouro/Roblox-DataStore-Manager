@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0714">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Feedback</title>
+  <meta name="description" content="Hadasphere ??feedback. Leave your ideas, bug reports and questions.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="transition.css">
+<style>
+#feedback{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-height:72vh}
+.fb-wrap{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.fb-info p{font-size:14px;color:var(--dim);margin-bottom:14px}
+.fb-info b{color:var(--violet)}
+.fb-form{background:#0d1119;border:1px solid var(--line);border-radius:12px;padding:22px}
+.fb-form label{display:block;font-size:12px;letter-spacing:1px;color:var(--dim);margin-bottom:6px}
+.fb-form input,.fb-form textarea,.fb-form select{width:100%;background:#0a0d14;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:16px;outline:none;transition:border-color .2s}
+.fb-form input:focus,.fb-form textarea:focus,.fb-form select:focus{border-color:var(--purple)}
+.fb-form textarea{min-height:110px;resize:vertical}
+#fb-send{width:100%;background:var(--purple);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;letter-spacing:2px;font-weight:600;cursor:pointer;transition:all .2s}
+#fb-send:hover{background:#8d6cff;box-shadow:0 0 24px rgba(124,92,255,.4)}
+#fb-msg{font-size:12px;color:var(--green);margin-top:10px;min-height:18px;text-align:center}
+#fb-shot{width:100%;background:#0a0d14;border:1px dashed var(--line);border-radius:8px;color:var(--dim);padding:10px 12px;font-size:13px;font-family:inherit;margin-bottom:16px;outline:none;cursor:pointer;transition:border-color .2s}
+#fb-shot:hover{border-color:var(--purple);color:var(--text)}
+#fb-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+#fb-preview img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+@media(max-width:700px){
+  .fb-wrap{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<canvas id="bg"></canvas>
+<div class="sky-glow"></div>
+<div class="aurora"></div>
+<div class="abyss"></div>
+<div class="noise"></div>
+<div id="transition" class="cover"><span class="t-txt">Hadasphere</span><div class="bar"><i></i></div></div>
+
+<header>
+  <div class="container">
+    <a class="brand" href="index.html"><img src="logo.png" alt="Hadasphere">Hadasphere</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="devlog.html">Dev Log</a>
+      <a href="progress.html">Progress</a>
+      <a href="feedback.html" class="active">Feedback</a>
+      <a href="guides.html">Guides</a>
+      <a href="discord.html">Discord</a>
+    </nav>
+    <button class="menu-btn" id="menu-btn" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="page" id="feedback">
+  <div class="container">
+    <div class="sec-head">
+      <h2>Feedback</h2>
+      <p>Your ideas shape this world. Leave your voice here.</p>
+    </div>
+    <div class="fb-wrap">
+      <div class="fb-info">
+        <p style="color:var(--violet);font-style:italic;font-size:14px">They said "it's just a dream." but what if I made it?</p>
+        <p><b>Want to appeal something?</b> Fill the form on the right hand. Your words are heard from the personnels in Hadasphere.</p>
+        <p><b>Reporting a bug?</b> Make sure to tell us any details also please paste a screenshot so we can fix properly.</p>
+        <p><b>"How to track my feedback?"</b> Join the Discord and search for your name in <code>#feedback</code>.</p>
+      </div>
+      <form class="fb-form" id="fb-form">
+        <label>YOUR NAME (OPTIONAL)</label>
+        <input type="text" id="fb-name" placeholder="Subject #0001">
+        <label>TYPE</label>
+        <select id="fb-type">
+          <option value="suggestion">Suggestion</option>
+          <option value="bug">Bug Report</option>
+          <option value="question">Question</option>
+          <option value="other">Other</option>
+        </select>
+        <label>TITLE</label>
+        <input type="text" id="fb-title" placeholder="One sentence describing it">
+        <label>DETAILS</label>
+        <textarea id="fb-body" placeholder="Explain your idea / what happened / add screenshot notes"></textarea>
+        <label>SCREENSHOT (OPTIONAL 📸 ATTACH IT IN DISCORD TOO)</label>
+        <input type="file" id="fb-shot" accept="image/*" multiple>
+        <div id="fb-preview"></div>
+        <button type="submit" id="fb-send">SUBMIT FEEDBACK</button>
+        <div id="fb-msg"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="brand"><img src="logo.png" alt="Hadasphere">Hadasphere</div>
+  <p>Hadasphere is an independently developed Roblox game. Not released yet.</p>
+  <p class="notaff">Not affiliated with or endorsed by Roblox Corporation.</p>
+</footer>
+
+<script>
+// ===== FEEDBACK =====
+const WEBHOOK_URL='https://discord.com/api/webhooks/1532701509207457983/Fw49wfXf-BrHiBjEPGMeNcAG9Si_PgxfE8m1rEgIRgR-n4Q8zWJYCqCwzn8vCwDLuemW';
+
+const BANNED_WORDS=[
+  /\bfuc\w*\b/,/\bshit\w*\b/,/\bbitch\w*\b/,/\bass\b/,/\bbastard\w*\b/,/\bcunt\w*\b/,
+  /\bdick\w*\b/,/\bcock\b/,/\bpussy\w*\b/,/\bwhore\w*\b/,/\bslut\w*\b/,/\bnigg\w*\b/,
+  /\bfaggot\w*\b/,/\bskank\w*\b/,/\bfuk\w*\b/,/\bhoe\b/,/\bcrap\b/,/\bdamn\b/,/\bhell\b/,
+  /\bpenis\b/,/\bvagina\b/,/\bsex\b/,/\bretard\w*\b/,/\brape\b/,/\bnazi\w*\b/
+];
+const BANNED_CENSORED=[
+  /f[^a-z]*\*+[^a-z]*ck/i,/sh[^a-z]*\*+[^a-z]*t/i,/b[^a-z]*\*+[^a-z]*tch/i,
+  /a[^a-z]*\*+[^a-z]*sh/i,/d[^a-z]*\*+[^a-z]*ck/i,/c[^a-z]*\*+[^a-z]*ck/i,
+  /f[^a-z]*u[^a-z]*[ck]/i,/s[^a-z]*h[^a-z]*i[^a-z]*t/i
+];
+const BANNED_ZH=[/靠/,/操你/,/幹/,/干你/,/屌/,/肏/,/他媽/,/你媽/,/媽的/,/幹你娘/,/干你娘/,/尼瑪/,/你老母/,/王八/,/白癡/,/白痴/,/賤人/,/贱人/];
+function containsSwear(t){
+  const norm=t.toLowerCase().replace(/[^\w\s']/g,'')
+    .replace(/0/g,'o').replace(/1/g,'i').replace(/3/g,'e')
+    .replace(/4/g,'a').replace(/5/g,'s').replace(/7/g,'t').replace(/8/g,'b')
+    .replace(/@/g,'a').replace(/\$/g,'s').replace(/!/g,'i');
+  if(BANNED_WORDS.some(r=>r.test(norm)))return true;
+  if(BANNED_CENSORED.some(r=>r.test(t)))return true;
+  if(BANNED_ZH.some(r=>r.test(t)))return true;
+  return false;
+}
+
+const form=document.getElementById('fb-form');
+const shotInput=document.getElementById('fb-shot');
+const preview=document.getElementById('fb-preview');
+shotInput.addEventListener('change',()=>{
+  preview.innerHTML='';
+  [...shotInput.files].forEach(f=>{
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(f);
+    img.title=f.name;
+    preview.appendChild(img);
+  });
+});
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=document.getElementById('fb-name').value.trim()||'Subject #0001';
+  const type=document.getElementById('fb-type').value;
+  const title=document.getElementById('fb-title').value.trim();
+  const body=document.getElementById('fb-body').value.trim();
+  const msg=document.getElementById('fb-msg');
+  if(!title||!body){
+    msg.style.color='var(--red)';
+    msg.textContent='Both the title and the details are required.';
+    return;
+  }
+  const shotNames=[...shotInput.files].map(f=>f.name).join(' ');
+  if(containsSwear(name)||containsSwear(title)||containsSwear(body)||containsSwear(shotNames)){
+    msg.style.color='var(--red)';
+    msg.textContent='Keep it clean please. Swear words are not allowed — your feedback was not sent.';
+    return;
+  }
+  const typeMap={suggestion:'Suggestion',bug:'Bug Report',question:'Question',other:'Other'};
+  const shots=[...shotInput.files].map(f=>`📎 ${f.name}`).join('\n');
+  const blockLines=[`**${title}**`];
+  if(body)blockLines.push(body);
+  if(shots)blockLines.push(shots);
+  const text=`*${name}* [${typeMap[type]}]\n\n${blockLines.map(l=>`> ${l}`).join('\n')}`;
+  const sendBtn=document.getElementById('fb-send');
+  sendBtn.disabled=true;
+  sendBtn.textContent='SENDING...';
+  fetch(WEBHOOK_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content:text})
+  })
+  .then(r=>{
+    if(!r.ok)throw new Error(r.status);
+    msg.style.color='var(--green)';
+    msg.innerHTML=`Sent! Your feedback has been delivered to the Discord <code>#feedback</code> channel.${shots?' Remember to attach your screenshot(s) to the message in Discord too.':''}`;
+  })
+  .catch(()=>{
+    msg.style.color='var(--red)';
+    msg.textContent='Send failed. Copy it instead? Try again, or write directly in the Discord feedback channel.';
+  })
+  .finally(()=>{
+    sendBtn.disabled=false;
+    sendBtn.textContent='SUBMIT FEEDBACK';
+  });
+  preview.innerHTML='';
+  form.reset();
+});
+</script>
+<script src="script.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>

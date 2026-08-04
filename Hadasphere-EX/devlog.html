@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0714">
+<link rel="icon" type="image/png" href="logo.png">
+<title>Development</title>
+  <meta name="description" content="Hadasphere ??development log. Drafts and update status, newest first.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="transition.css">
+<style>
+.log{display:flex;flex-direction:column;gap:18px}
+.entry{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--purple);border-radius:10px;padding:22px 24px;transition:border-color .2s}
+.entry:hover{border-left-color:var(--cyan)}
+.entry .meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.entry .date{font-size:12px;color:var(--dim);letter-spacing:1px}
+.tag{font-size:11px;padding:3px 12px;border-radius:999px;letter-spacing:1px}
+.tag.draft{background:rgba(124,92,255,.15);color:var(--violet);border:1px solid var(--purple)}
+.tag.wip{background:rgba(77,216,255,.12);color:var(--cyan);border:1px solid var(--cyan)}
+.tag.done{background:rgba(77,216,138,.12);color:var(--green);border:1px solid var(--green)}
+.tag.new{background:rgba(255,92,92,.12);color:var(--red);border:1px solid var(--red)}
+.entry h3{font-size:16px;color:#fff;letter-spacing:1px;margin-bottom:6px}
+.entry p{font-size:13.5px;color:var(--dim)}
+.entry ul{margin-top:6px;padding-left:20px}
+.entry li{font-size:13px;color:var(--dim)}
+.entry blockquote{margin:8px 0 0;padding:8px 14px;border-left:3px solid var(--purple);background:rgba(124,92,255,.08);border-radius:6px;font-size:13px;color:var(--violet);font-style:italic}
+.entry .mention{display:inline-block;padding:1px 8px;border-radius:6px;background:rgba(124,92,255,.16);color:var(--violet);font-size:12px;font-weight:600}
+.entry .foot{font-size:12px;color:var(--violet);margin-top:8px;font-style:italic}
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<canvas id="bg"></canvas>
+<div class="sky-glow"></div>
+<div class="aurora"></div>
+<div class="abyss"></div>
+<div class="noise"></div>
+<div id="transition" class="cover"><span class="t-txt">Hadasphere</span><div class="bar"><i></i></div></div>
+
+<header>
+  <div class="container">
+    <a class="brand" href="index.html"><img src="logo.png" alt="Hadasphere">Hadasphere</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="devlog.html" class="active">Dev Log</a>
+      <a href="progress.html">Progress</a>
+      <a href="feedback.html">Feedback</a>
+      <a href="guides.html">Guides</a>
+      <a href="discord.html">Discord</a>
+    </nav>
+    <button class="menu-btn" id="menu-btn" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="page">
+  <div class="container">
+    <div class="sec-head">
+      <h2>Development Log</h2>
+      <p>Drafts and update status, newest first.</p>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="brand"><img src="logo.png" alt="Hadasphere">Hadasphere</div>
+  <p>Hadasphere is an independently developed Roblox game. Not released yet.</p>
+  <p class="notaff">Not affiliated with or endorsed by Roblox Corporation.</p>
+</footer>
+
+<script>
+// ===== DEVELOPMENT LOG =====
+let LOG=[
+  {
+    date:'2026-07-31',
+    title:'Website Launch · Dev Log is Open',
+    status:'new',
+    body:'First version of the website is live.\nThe Discord server is live too ??everyone is welcome to join.',
+    list:['Website v1 launched','Discord server opened','Feedback form enabled']
+  }
+];
+const logEl=document.getElementById('log');
+const MENTION_NAMES={
+  '1532717687082582166':'Hadasphere',
+  '1532700113921904732':'Feedback'
+};
+function esc(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function inline(text){
+  return text
+    .replace(/&lt;@(\d+)&gt;/g,(m,id)=>`<span class="mention">@${esc(MENTION_NAMES[id]||'user')}</span>`)
+    .replace(/&lt;#(\d+)&gt;/g,(m,id)=>`<span class="mention">#${esc(MENTION_NAMES[id]||'channel')}</span>`)
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+}
+function renderBody(body){
+  const out=[];
+  let bullets=[];
+  const flush=()=>{
+    if(bullets.length){out.push(`<ul>${bullets.map(b=>`<li>${inline(esc(b))}</li>`).join('')}</ul>`);bullets=[];}
+  };
+  (body||'').split(/\n/).forEach(line=>{
+    if(/^\s*>/.test(line)){
+      flush();
+      if(line.trim())out.push(`<blockquote>${inline(esc(line.replace(/^\s*>\s?/,'')))}</blockquote>`);
+      return;
+    }
+    const t=line.replace(/^\s*-\s+/,'').trim();
+    if(t!==line){
+      bullets.push(t);
+    }else{
+      flush();
+      if(line.trim())out.push(`<p>${inline(esc(line))}</p>`);
+    }
+  });
+  flush();
+  return out.join('');
+}
+function renderLog(){
+  logEl.innerHTML='';
+  LOG.forEach(e=>{
+    const el=document.createElement('div');
+    el.className='entry';
+    const statusMap={draft:'Draft',wip:'In Progress',done:'Completed',new:'Latest'};
+    el.innerHTML=`
+      <div class="meta">
+        <span class="date">${e.date}</span>
+        <span class="tag ${e.status}">${statusMap[e.status]||e.status}</span>
+      </div>
+      <h3>${inline(esc(e.title))}</h3>
+      ${renderBody(e.body)}
+      ${e.list?`<ul>${e.list.map(i=>`<li>${inline(esc(i))}</li>`).join('')}</ul>`:''}
+      ${e.foot?`<div class="foot">${e.foot}</div>`:''}
+    `;
+    logEl.appendChild(el);
+  });
+}
+renderLog();
+window.__pageReady=new Promise(res=>{
+  fetch('devlog.json')
+    .then(r=>r.json())
+    .then(data=>{
+      if(Array.isArray(data)&&data.length>0){
+        LOG=data;
+        renderLog();
+      }
+      res();
+    })
+    .catch(()=>res());
+});
+</script>
+<script src="script.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>
