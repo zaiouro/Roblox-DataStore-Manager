@@ -360,6 +360,7 @@ local function sendNpc(text)
 		from = NPC.name,
 		uid = -1,          -- sentinel: client knows uid -1 + npc means "not a player"
 		npc = rig,
+		npcName = rig.Name,
 		text = text,
 		staff = false,
 	}

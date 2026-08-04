@@ -10,6 +10,7 @@
 ]]
 
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 local TextChatService = game:GetService("TextChatService")
@@ -86,11 +87,27 @@ local function headOf(sender)
 	return ch and ch:FindFirstChild("Head") or nil
 end
 
+-- resolve the NPC's head from the payload: the rig instance may not survive
+-- the remote trip on every setup, so fall back to a workspace lookup by name
+local function npcHeadOf(npcModel)
+	if npcModel == nil then return nil end
+	return npcModel:FindFirstChild("Head")
+		or (npcModel.PrimaryPart and npcModel.PrimaryPart or npcModel:FindFirstChild("HumanoidRootPart"))
+end
+
+local function findNpcModel(data)
+	local m = typeof(data.npc) == "Instance" and data.npc or nil
+	if not m and typeof(data.npcName) == "string" then
+		m = Workspace:FindFirstChild(data.npcName)
+	end
+	return m
+end
+
 local function pushBubble(uid, fromName, text, isStaff, npcModel)
 	if not bubblesEnabled then return end
 	local head
 	if npcModel then
-		head = npcModel:FindFirstChild("Head")
+		head = npcHeadOf(npcModel)
 	else
 		local sender = Players:GetPlayerByUserId(uid)
 		if not sender then return end
@@ -324,7 +341,7 @@ chatRemote.OnClientEvent:Connect(function(data)
 	local uid = type(data.uid) == "number" and data.uid or nil
 	local text = tostring(data.text or "")
 	local isStaff = data.staff == true
-	local npcModel = typeof(data.npc) == "Instance" and data.npc or nil
+	local npcModel = findNpcModel(data)
 	if #text == 0 then return end
 	setTyping(uid, false)
 	pushBubble(uid, from, text, isStaff, npcModel)

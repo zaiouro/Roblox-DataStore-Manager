@@ -532,8 +532,8 @@ local function openingAnnouncement()
 		"Press E to interact",
 	}
 	local card = mk("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 12),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -14, 0, 12),
 		Size = UDim2.new(0, 420, 0, 86),
 		BackgroundColor3 = COLORS.panel,
 		BorderSizePixel = 0,
