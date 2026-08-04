@@ -80,7 +80,7 @@ On Play, Output shows:
 
 ## Contact
 
-- **Discord:** zaiouro
+- **Discord:** zaiouro. (with dot)
 - **Roblox:** https://www.roblox.com/users/3255975644/profile
 
 *Thanks for reading! — zaiouro*
