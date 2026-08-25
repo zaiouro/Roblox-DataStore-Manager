@@ -300,7 +300,7 @@ class TradeCalculator:
         self.root.title("Adopt Me - Trade Value Calculator")
         self.root.configure(bg=BG)
         self.root.resizable(False, False)
-        self.root.geometry("560x540")
+        self.root.geometry("560x580")
 
         self.your_panel = None
         self.their_panel = None
@@ -325,13 +325,60 @@ class TradeCalculator:
         self.your_frame = self._build_panel(body, "YOUR PETS", GREEN, 0)
         self.their_frame = self._build_panel(body, "TRADER'S PETS", BLUE, 1)
 
-        # --- Result bar ---
+        # --- Result bar with value comparison ---
         res_frame = tk.Frame(root, bg=PANEL, bd=0, highlightthickness=0)
-        res_frame.pack(fill="x", padx=8, pady=8)
+        res_frame.pack(fill="x", padx=8, pady=(4, 4))
 
+        # Your side bar
+        your_bar_frame = tk.Frame(res_frame, bg=BG, height=20)
+        your_bar_frame.pack(fill="x", padx=8, pady=(6, 2))
+        your_bar_frame.pack_propagate(False)
+
+        tk.Label(
+            your_bar_frame, text="YOU", font=("Segoe UI", 8, "bold"),
+            bg=BG, fg=GREEN, width=4
+        ).pack(side="left")
+
+        your_bar_bg = tk.Frame(your_bar_frame, bg=LINE, height=14)
+        your_bar_bg.pack(side="left", fill="x", expand=True, padx=(2, 4))
+        your_bar_bg.pack_propagate(False)
+
+        self.your_bar = tk.Frame(your_bar_bg, bg=GREEN, height=14)
+        self.your_bar.place(x=0, y=0, relheight=1, relwidth=0)
+
+        self.your_val_lbl = tk.Label(
+            your_bar_frame, text="0", font=("Segoe UI", 9, "bold"),
+            bg=BG, fg=GREEN, width=8
+        )
+        self.your_val_lbl.pack(side="right")
+
+        # Their side bar
+        their_bar_frame = tk.Frame(res_frame, bg=BG, height=20)
+        their_bar_frame.pack(fill="x", padx=8, pady=2)
+        their_bar_frame.pack_propagate(False)
+
+        tk.Label(
+            their_bar_frame, text="THEM", font=("Segoe UI", 8, "bold"),
+            bg=BG, fg=BLUE, width=4
+        ).pack(side="left")
+
+        their_bar_bg = tk.Frame(their_bar_frame, bg=LINE, height=14)
+        their_bar_bg.pack(side="left", fill="x", expand=True, padx=(2, 4))
+        their_bar_bg.pack_propagate(False)
+
+        self.their_bar = tk.Frame(their_bar_bg, bg=BLUE, height=14)
+        self.their_bar.place(x=0, y=0, relheight=1, relwidth=0)
+
+        self.their_val_lbl = tk.Label(
+            their_bar_frame, text="0", font=("Segoe UI", 9, "bold"),
+            bg=BG, fg=BLUE, width=8
+        )
+        self.their_val_lbl.pack(side="right")
+
+        # Verdict text
         self.result_lbl = tk.Label(
             res_frame, text="Add pets to both sides to compare values",
-            font=("Segoe UI", 10, "bold"), bg=PANEL, fg=DIM, pady=8
+            font=("Segoe UI", 10, "bold"), bg=PANEL, fg=DIM, pady=6
         )
         self.result_lbl.pack(fill="x")
 
@@ -483,6 +530,15 @@ class TradeCalculator:
         yours = self.your_panel.get_total()
         theirs = self.their_panel.get_total()
         diff = yours - theirs
+
+        # Update value labels
+        self.your_val_lbl.config(text=str(yours))
+        self.their_val_lbl.config(text=str(theirs))
+
+        # Update bars (scale to whichever side is larger, minimum 1 to avoid div/0)
+        max_val = max(yours, theirs, 1)
+        self.your_bar.place(x=0, y=0, relheight=1, relwidth=yours / max_val)
+        self.their_bar.place(x=0, y=0, relheight=1, relwidth=theirs / max_val)
 
         if yours == 0 and theirs == 0:
             self.result_lbl.config(text="Add pets to both sides to compare values", fg=DIM)
