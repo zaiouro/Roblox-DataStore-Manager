@@ -1,6 +1,7 @@
 """
 Adopt Me Trade Value Calculator
 A standalone Python GUI tool to calculate pet trade values.
+Values sourced from community data (August 2026).
 Use alongside Roblox while trading in Adopt Me.
 """
 
@@ -20,6 +21,128 @@ GOLD     = "#c8aa50"
 RED      = "#c84b4b"
 INPUT_BG = "#0e0e14"
 BTN_ADD  = "#328c5a"
+
+# ============ PET VALUES DATABASE (RP - Ride Potion equivalents) ============
+# Values from Traderie / community data, August 2026
+PET_VALUES = {
+    # --- Legendary (Top Tier) ---
+    "bat dragon": 940,
+    "shadow dragon": 844,
+    "giraffe": 475,
+    "frost dragon": 326,
+    "owl": 246,
+    "giant panda": 211,
+    "parrot": 196,
+    "crow": 175,
+    "balloon unicorn": 165,
+    "blazing lion": 155,
+    "evil unicorn": 108,
+    "orchid butterfly": 103,
+    "hedgehog": 65,
+    "monkey king": 64,
+    "diamond butterfly": 61,
+    "undead jousting horse": 60,
+    "jekyll hydra": 59,
+    "dalmatian": 58,
+    "arctic reindeer": 49,
+    "strawberry tortle": 47,
+    "frostbite bear": 42,
+    "african wild dog": 153,
+    "cryptid": 133,
+    "haetae": 117,
+
+    # --- Legendary (Mid Tier) ---
+    "turtle": 32,
+    "kangaroo": 30,
+    "faker frost dragon": 28,
+    "octopus": 14,
+    "dragon": 11,
+    "griffin": 10,
+    "unicorn": 9,
+    "kitsune": 8,
+    "toucan": 6,
+    "robin": 5,
+    "snow owl": 5,
+    "metal ox": 3,
+    "golden unicorn": 3,
+    "golden griffin": 3,
+    "golden dragon": 3,
+    "queen bee": 4,
+    "diamond egg": 3,
+    "roc": 4,
+    "phoenix": 4,
+    "skeletal Rex": 5,
+    "swan": 12,
+
+    # --- Legendary (Low Tier) ---
+    "dodo": 3,
+    "trex": 3,
+    "sloth": 2,
+    "frost fury": 6,
+    "lava dragon": 4,
+    "neon shadow dragon": 1688,
+    "neon bat dragon": 1880,
+    "neon frost dragon": 652,
+    "neon giraffe": 950,
+
+    # --- Ultra Rare ---
+    "snake": 3,
+    "elephant": 14,
+    "cow": 12,
+    "sheep": 6,
+    "platypus": 5,
+    "red panda": 4,
+    "penguin": 3,
+    "koala": 2,
+    "hippo": 2,
+    "bunny": 1,
+    "cat": 1,
+    "dog": 1,
+    "chick": 1,
+    "flamingo": 8,
+    "chocolate labrador": 1,
+
+    # --- Rare ---
+    "pig": 4,
+    "horse": 1,
+    "stegosaurus": 1,
+    "triceratops": 1,
+    "raptor": 1,
+    "wolf": 1,
+    "fox": 1,
+    "bear": 1,
+    "donkey": 1,
+    "rabbit": 1,
+    "snow cat": 1,
+
+    # --- Eggs ---
+    "frost egg": 8,
+    "royal egg": 4,
+    "egg": 2,
+    "cracked egg": 1,
+    "pet egg": 1,
+
+    # --- Vehicles ---
+    "mr car": 2,
+    "hoverboard": 1,
+
+    # --- Toys ---
+    "ride potion": 1,
+    "fly potion": 3,
+    "frost wing": 2,
+}
+
+
+def lookup_value(name):
+    """Look up a pet value by name (case-insensitive, fuzzy match)."""
+    key = name.lower().strip()
+    if key in PET_VALUES:
+        return PET_VALUES[key]
+    # Try partial match
+    for pet_name, val in PET_VALUES.items():
+        if key in pet_name or pet_name in key:
+            return val
+    return None
 
 
 class PlaceholderEntry(tk.Entry):
@@ -54,6 +177,12 @@ class PlaceholderEntry(tk.Entry):
         if self._showing_placeholder:
             return ""
         return self.get().strip()
+
+    def set_text(self, text):
+        self._showing_placeholder = False
+        self.config(fg=TEXT)
+        self.delete(0, "end")
+        self.insert(0, text)
 
     def clear(self):
         self._put_placeholder()
@@ -91,13 +220,87 @@ class PetEntry:
         self.frame.destroy()
 
 
+class AutocompleteDropdown:
+    """Dropdown that shows matching pet names as user types."""
+
+    def __init__(self, parent_entry, on_select):
+        self.entry = parent_entry
+        self.on_select = on_select
+        self.window = None
+        self.listbox = None
+
+    def show(self, matches):
+        self.hide()
+        if not matches:
+            return
+
+        # Position below the entry
+        x = self.entry.winfo_rootx()
+        y = self.entry.winfo_rooty() + self.entry.winfo_height()
+        w = self.entry.winfo_width()
+
+        self.window = tk.Toplevel(self.entry)
+        self.window.wm_overrideredirect(True)
+        self.window.wm_geometry(f"{w}x{min(len(matches), 6) * 22}+{x}+{y}")
+
+        self.listbox = tk.Listbox(
+            self.window,
+            font=("Segoe UI", 10),
+            bg=INPUT_BG,
+            fg=TEXT,
+            selectbackground=LINE,
+            selectforeground=GOLD,
+            highlightthickness=1,
+            highlightcolor=LINE,
+            borderwidth=0,
+            activestyle="none",
+        )
+        self.listbox.pack(fill="both", expand=True)
+
+        for match in matches:
+            val = PET_VALUES.get(match, "?")
+            self.listbox.insert("end", f"{match.title()}  ({val} RP)")
+
+        self.listbox.bind("<ButtonRelease-1>", self._on_click)
+        self.listbox.bind("<Return>", self._on_enter)
+        self.listbox.select_set(0)
+
+        # Close on click outside
+        self.entry.bind("<FocusOut>", lambda e: self.hide())
+
+    def hide(self):
+        if self.window:
+            self.window.destroy()
+            self.window = None
+            self.listbox = None
+
+    def _on_click(self, _event):
+        self._select()
+
+    def _on_enter(self, _event):
+        self._select()
+
+    def _select(self):
+        if not self.listbox:
+            return
+        sel = self.listbox.curselection()
+        if not sel:
+            return
+        text = self.listbox.get(sel[0])
+        # Extract pet name (before the value part)
+        pet_name = text.split("  (")[0]
+        self.entry.set_text(pet_name)
+        self.hide()
+        self.on_select(pet_name)
+
+
 class TradeCalculator:
     def __init__(self, root):
         self.root = root
         self.root.title("Adopt Me - Trade Value Calculator")
         self.root.configure(bg=BG)
         self.root.resizable(False, False)
-        self.root.geometry("560x520")
+        self.root.geometry("560x540")
 
         self.your_panel = None
         self.their_panel = None
@@ -109,6 +312,11 @@ class TradeCalculator:
             hdr, text="ADOPT ME - TRADE VALUE CALCULATOR",
             font=("Segoe UI", 11, "bold"), bg=PANEL, fg=GOLD
         ).pack(side="left", padx=12, pady=8)
+
+        tk.Label(
+            hdr, text=f"{len(PET_VALUES)} pets loaded",
+            font=("Segoe UI", 8), bg=PANEL, fg=DIM
+        ).pack(side="right", padx=12, pady=8)
 
         # --- Main content (two panels) ---
         body = tk.Frame(root, bg=BG)
@@ -128,7 +336,8 @@ class TradeCalculator:
         self.result_lbl.pack(fill="x")
 
         tk.Label(
-            root, text="Tip: press Enter in the Value field to add a pet",
+            root,
+            text="Type a pet name - value auto-fills from database  |  Press Enter to add",
             font=("Segoe UI", 8), bg=BG, fg=DIM
         ).pack(pady=(0, 6))
 
@@ -174,6 +383,24 @@ class TradeCalculator:
             relief="flat", cursor="hand2", padx=8
         )
         add_btn.pack(side="left", padx=(4, 0))
+
+        # Autocomplete dropdown
+        dropdown = AutocompleteDropdown(name_entry, lambda pet_name: self._on_pet_selected(pet_name, val_entry))
+
+        def on_name_typed(_event):
+            text = name_entry.get_value().lower().strip()
+            if not text:
+                dropdown.hide()
+                return
+            matches = [p for p in PET_VALUES if text in p][:6]
+            dropdown.show(matches)
+
+        def on_name_leave(_event):
+            # Delay hide so dropdown click can register
+            root.after(150, dropdown.hide)
+
+        name_entry.bind("<KeyRelease>", on_name_typed)
+        name_entry.bind("<FocusOut>", on_name_leave)
 
         # Scrollable pet list
         list_canvas = tk.Canvas(inner, bg=PANEL, highlightthickness=0, bd=0)
@@ -243,6 +470,12 @@ class TradeCalculator:
             self.their_panel = panel_ref
 
         return outer
+
+    def _on_pet_selected(self, pet_name, val_entry):
+        """Auto-fill value when a pet is selected from dropdown."""
+        val = lookup_value(pet_name)
+        if val is not None:
+            val_entry.set_text(str(val))
 
     def _update_result(self):
         if not self.your_panel or not self.their_panel:
